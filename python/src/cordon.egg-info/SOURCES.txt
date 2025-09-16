@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+src/cordon.egg-info/PKG-INFO
+src/cordon.egg-info/SOURCES.txt
+src/cordon.egg-info/dependency_links.txt
+src/cordon.egg-info/top_level.txt

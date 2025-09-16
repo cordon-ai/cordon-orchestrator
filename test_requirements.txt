@@ -1,0 +1,11 @@
+pytest
+coverage
+boto3
+anthropic
+moto
+pytest-mock
+pytest-asyncio
+openai
+libsql-client
+ruff>=0.11.4
+strands-agents==1.5.0
