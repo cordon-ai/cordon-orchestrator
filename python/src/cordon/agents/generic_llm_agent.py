@@ -15,12 +15,6 @@ class GenericLLMAgentOptions(AgentOptions):
 
 class GenericLLMAgent(Agent):
     """Adapter agent that allows plugging any text generation backend via a callable.
-
-    Satisfies SupervisorAgent's duck-typed requirements:
-    - set_system_prompt(str)
-    - process_request(...)
-    - is_streaming_enabled() -> bool
-    - tool wiring via set_tool_config(tool, tool_max_recursions) or tool_config attr
     """
 
     def __init__(self, options: GenericLLMAgentOptions):
