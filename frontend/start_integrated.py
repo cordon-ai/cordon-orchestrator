@@ -25,8 +25,10 @@ import uvicorn
 
 # Import cordon components
 from cordon.agents.generic_llm_agent import GenericLLMAgent, GenericLLMAgentOptions
-from cordon.orchestrator import AgentSquad
-from cordon.types import AgentSquadConfig, ConversationMessage, ParticipantRole
+from cordon.orchestrator import AgentTeam
+from cordon.types import AgentTeamConfig, ConversationMessage, ParticipantRole
+from cordon.agents.openai_agent import OpenAIAgent, OpenAIAgentOptions
+from cordon.agents.anthropic_agent import AnthropicAgent, AnthropicAgentOptions
 
 # Initialize FastAPI app
 app = FastAPI(title="Cordon AI Frontend", version="1.0.0")
@@ -66,22 +68,42 @@ class AgentInfo(BaseModel):
     description: str
     type: str
     status: str
-    requestCount: int = 0
+    requestCount: int
+    capabilities: List[str] = []
 
 class MarketplaceAgent(BaseModel):
     id: str
     name: str
-    category: str
+    category: str  # Changed from 'category' to match frontend
     description: str
     icon: str
     rating: float
     downloads: int
+    capabilities: List[str] = []
+    requires_api_key: bool = False
+    api_key_placeholder: str = ""
+    agent_type: str = "GenericLLMAgent"  # Type of agent class to instantiate
+    api_key: Optional[str] = None  # API key for agents that require it
+
+# Helper function to get agent capabilities
+def get_agent_capabilities(agent_name: str) -> List[str]:
+    """Get capabilities for a given agent"""
+    capabilities_map = {
+        "Researcher": ["Research", "Analysis", "Data gathering", "Fact checking"],
+        "Coder": ["Programming", "Code review", "Debugging", "Software development"],
+        "Supervisor": ["Classification", "Routing", "Coordination", "Management"],
+        "Writer": ["Content creation", "Editing", "Proofreading", "Creative writing"],
+        "Data Analyst": ["Data analysis", "Statistics", "Visualization", "Reporting"],
+        "Designer": ["UI/UX design", "Graphics", "Prototyping", "Visual design"],
+        "Translator": ["Language translation", "Localization", "Cultural adaptation"]
+    }
+    return capabilities_map.get(agent_name, ["General assistance"])
 
 # Initialize the orchestrator
 def initialize_orchestrator():
     global orchestrator
     
-    orchestrator = AgentSquad(options=AgentSquadConfig(
+    orchestrator = AgentTeam(options=AgentTeamConfig(
         LOG_AGENT_CHAT=True,
         LOG_CLASSIFIER_CHAT=True,
         LOG_CLASSIFIER_RAW_OUTPUT=True,
@@ -392,6 +414,114 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
+@app.get("/api/marketplace", response_model=List[MarketplaceAgent])
+async def get_marketplace_agents():
+    """Get available agents from marketplace"""
+    marketplace_agents = [
+        # AI Provider Agents (require API keys)
+        MarketplaceAgent(
+            id="openai_001",
+            name="OpenAI Agent",
+            category="AI Provider",
+            description="Advanced AI agent powered by OpenAI's GPT models for intelligent conversations and task completion",
+            icon="🤖",
+            rating=4.9,
+            downloads=2500,
+            capabilities=["Natural language processing", "Code generation", "Creative writing", "Analysis", "Problem solving"],
+            requires_api_key=True,
+            api_key_placeholder="sk-...",
+            agent_type="OpenAIAgent"
+        ),
+        MarketplaceAgent(
+            id="anthropic_001",
+            name="Anthropic Assistant",
+            category="AI Provider",
+            description="Versatile AI assistant powered by Anthropic's Claude models for comprehensive assistance",
+            icon="🧠",
+            rating=4.8,
+            downloads=1800,
+            capabilities=["Conversational AI", "Reasoning", "Analysis", "Creative tasks", "Technical assistance"],
+            requires_api_key=True,
+            api_key_placeholder="sk-ant-...",
+            agent_type="AnthropicAgent"
+        ),
+        # Generic Agents (no API key required)
+        MarketplaceAgent(
+            id="writer_001",
+            name="Writer",
+            category="Content",
+            description="Professional content writer specializing in articles, blogs, and creative writing",
+            icon="✍️",
+            rating=4.8,
+            downloads=1250,
+            capabilities=["Content creation", "Editing", "Proofreading", "Creative writing"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        ),
+        MarketplaceAgent(
+            id="data_analyst_001",
+            name="Data Analyst",
+            category="Analytics",
+            description="Expert in data analysis, statistics, and creating insightful reports",
+            icon="📊",
+            rating=4.9,
+            downloads=980,
+            capabilities=["Data analysis", "Statistics", "Visualization", "Reporting"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        ),
+        MarketplaceAgent(
+            id="designer_001",
+            name="Designer",
+            category="Design",
+            description="UI/UX designer with expertise in modern design principles and prototyping",
+            icon="🎨",
+            rating=4.7,
+            downloads=750,
+            capabilities=["UI/UX design", "Graphics", "Prototyping", "Visual design"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        ),
+        MarketplaceAgent(
+            id="translator_001",
+            name="Translator",
+            category="Language",
+            description="Multi-language translator with expertise in technical and creative translation",
+            icon="🌐",
+            rating=4.6,
+            downloads=650,
+            capabilities=["Language translation", "Localization", "Cultural adaptation"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        ),
+        MarketplaceAgent(
+            id="marketing_001",
+            name="Marketing Specialist",
+            category="Marketing",
+            description="Digital marketing expert specializing in campaigns and strategy",
+            icon="📈",
+            rating=4.5,
+            downloads=420,
+            capabilities=["Campaign planning", "SEO", "Social media", "Analytics"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        ),
+        MarketplaceAgent(
+            id="consultant_001",
+            name="Business Consultant",
+            category="Business",
+            description="Strategic business consultant with expertise in operations and growth",
+            icon="💼",
+            rating=4.8,
+            downloads=890,
+            capabilities=["Strategy", "Operations", "Growth planning", "Analysis"],
+            requires_api_key=False,
+            agent_type="GenericLLMAgent"
+        )
+    ]
+    
+    return marketplace_agents
+
 @app.get("/api/agents", response_model=List[AgentInfo])
 async def get_agents():
     """Get list of current agents"""
@@ -403,7 +533,8 @@ async def get_agents():
             description=agent.description,
             type="GenericLLMAgent",
             status="active",
-            requestCount=0
+            requestCount=0,
+            capabilities=get_agent_capabilities(agent.name)
         ))
     
     if orchestrator.supervisor:
@@ -413,26 +544,100 @@ async def get_agents():
             description=orchestrator.supervisor.description,
             type="Supervisor",
             status="active",
-            requestCount=0
+            requestCount=0,
+            capabilities=get_agent_capabilities(orchestrator.supervisor.name)
         ))
     
     return agents
+
+@app.post("/api/agents/debug")
+async def debug_add_agent(request: dict):
+    """Debug endpoint to see what data is being sent"""
+    print(f"Raw request data: {request}")
+    return {"received": request}
 
 @app.post("/api/agents")
 async def add_agent(agent: MarketplaceAgent):
     """Add a new agent to the orchestrator"""
     try:
-        new_agent = GenericLLMAgent(GenericLLMAgentOptions(
-            name=agent.name,
-            description=agent.description,
-            generate=my_model_generate,
-        ))
+        print(f"Received agent data: {agent}")
+        
+        # Create agent based on type
+        if agent.agent_type == "OpenAIAgent":
+            if not agent.api_key:
+                raise HTTPException(status_code=400, detail="OpenAI API key is required")
+            new_agent = OpenAIAgent(OpenAIAgentOptions(
+                name=agent.name,
+                description=agent.description,
+                api_key=agent.api_key
+            ))
+        elif agent.agent_type == "AnthropicAgent":
+            if not agent.api_key:
+                raise HTTPException(status_code=400, detail="Anthropic API key is required")
+            new_agent = AnthropicAgent(AnthropicAgentOptions(
+                name=agent.name,
+                description=agent.description,
+                api_key=agent.api_key
+            ))
+        else:  # GenericLLMAgent (default)
+            new_agent = GenericLLMAgent(GenericLLMAgentOptions(
+                name=agent.name,
+                description=agent.description,
+                generate=my_model_generate,
+            ))
         
         orchestrator.add_agent(new_agent)
-        return {"message": f"Agent '{agent.name}' added successfully"}
+        return {"message": f"Agent '{agent.name}' added successfully", "agent_id": new_agent.id}
         
     except Exception as e:
+        print(f"Error adding agent: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error adding agent: {str(e)}")
+
+class UpdateAgentRequest(BaseModel):
+    agent_id: str
+    api_key: str
+
+@app.put("/api/agents/{agent_id}")
+async def update_agent(agent_id: str, request: UpdateAgentRequest):
+    """Update an agent's API key"""
+    try:
+        # Find the agent
+        agent_found = None
+        agent_index = None
+        
+        for i, agent in enumerate(orchestrator.agents):
+            if agent.id == agent_id:
+                agent_found = agent
+                agent_index = i
+                break
+        
+        if not agent_found:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Update API key based on agent type
+        if isinstance(agent_found, OpenAIAgent):
+            # Create new OpenAI agent with updated API key
+            updated_agent = OpenAIAgent(OpenAIAgentOptions(
+                name=agent_found.name,
+                description=agent_found.description,
+                api_key=request.api_key
+            ))
+            orchestrator.agents[agent_index] = updated_agent
+        elif isinstance(agent_found, AnthropicAgent):
+            # Create new Anthropic agent with updated API key
+            updated_agent = AnthropicAgent(AnthropicAgentOptions(
+                name=agent_found.name,
+                description=agent_found.description,
+                api_key=request.api_key
+            ))
+            orchestrator.agents[agent_index] = updated_agent
+        else:
+            raise HTTPException(status_code=400, detail="This agent type does not support API key updates")
+        
+        return {"message": f"Agent '{agent_found.name}' API key updated successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating agent: {str(e)}")
 
 @app.delete("/api/agents/{agent_id}")
 async def remove_agent(agent_id: str):
@@ -473,19 +678,15 @@ async def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the orchestrator on startup"""
+if __name__ == "__main__":
+    print("Starting Cordon AI Frontend...")
+    print("This integrates the frontend with the existing cordon package")
+    print("Based on test_generic_llm_agent.py configuration")
+    # Initialize orchestrator before starting
     initialize_orchestrator()
     print("🚀 Cordon AI Frontend started!")
     print(f"📊 Orchestrator initialized with {len(orchestrator.agents)} agents")
     if orchestrator.supervisor:
         print(f"🎯 Supervisor agent: {orchestrator.supervisor.name}")
     print("🌐 Frontend available at: http://localhost:8000")
-
-if __name__ == "__main__":
-    print("Starting Cordon AI Frontend...")
-    print("This integrates the frontend with the existing cordon package")
-    print("Based on test_generic_llm_agent.py configuration")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

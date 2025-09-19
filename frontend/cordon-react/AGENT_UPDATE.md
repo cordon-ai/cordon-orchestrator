@@ -7,7 +7,7 @@ I've successfully replaced the agent initialization code in `start_integrated.py
 ### **1. Agent Initialization Functions:**
 
 #### **Updated `initialize_orchestrator()`:**
-- ✅ **Same Configuration**: Uses identical `AgentSquadConfig` settings
+- ✅ **Same Configuration**: Uses identical `AgentTeamConfig` settings
 - ✅ **Proper Function Call**: Calls `add_default_agents()` instead of `add_test_agents()`
 - ✅ **Better Documentation**: Updated docstring to reference `simple_frontend.py`
 

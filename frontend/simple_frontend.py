@@ -25,11 +25,11 @@ import uvicorn
 
 # Import only the core components we need
 from cordon.agents.generic_llm_agent import GenericLLMAgent, GenericLLMAgentOptions
-from cordon.orchestrator import AgentSquad
-from cordon.types import AgentSquadConfig, ConversationMessage, ParticipantRole
+from cordon.orchestrator import AgentTeam
+from cordon.types import AgentTeamConfig, ConversationMessage, ParticipantRole
 
 # Global orchestrator instance
-orchestrator = AgentSquad(options=AgentSquadConfig(
+orchestrator = AgentTeam(options=AgentTeamConfig(
   LOG_AGENT_CHAT=True,
   LOG_CLASSIFIER_CHAT=True,
   LOG_CLASSIFIER_RAW_OUTPUT=True,
@@ -106,7 +106,7 @@ class MarketplaceAgent(BaseModel):
 def initialize_orchestrator():
     global orchestrator
     
-    orchestrator = AgentSquad(options=AgentSquadConfig(
+    orchestrator = AgentTeam(options=AgentTeamConfig(
         LOG_AGENT_CHAT=True,
         LOG_CLASSIFIER_CHAT=True,
         LOG_CLASSIFIER_RAW_OUTPUT=True,

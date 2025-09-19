@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 import json
 import logging
-from cordon.types import ConversationMessage, AgentSquadConfig
+from cordon.types import ConversationMessage, AgentTeamConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,7 +20,7 @@ class Logger:
         if not hasattr(self, 'initialized'):
             Logger._logger = logger or logging.getLogger(__name__)
             self.initialized = True
-        self.config: AgentSquadConfig = config or AgentSquadConfig()
+        self.config: AgentTeamConfig = config or AgentTeamConfig()
 
     @classmethod
     def get_logger(cls):

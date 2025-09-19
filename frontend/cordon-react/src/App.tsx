@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, Loader2, Sparkles, Brain, Code, Search, MessageSquare, Store, Users, Plus, Trash2, Settings } from 'lucide-react';
+import { 
+  Send, Bot, Loader2, Sparkles, Brain, Code, Search, 
+  MessageSquare, Store, Users, Plus, Trash2, Settings,
+  Zap, Shield, Cpu, GitBranch, Database, Globe,
+  ChevronRight, Activity, PenTool, Languages
+} from 'lucide-react';
 import './App.css';
 
 // Types
@@ -17,10 +22,13 @@ interface Agent {
   id: string;
   name: string;
   description: string;
-  type: string;
+  category: string;
   status: string;
   requestCount: number;
   capabilities: string[];
+  requires_api_key?: boolean;
+  api_key_placeholder?: string;
+  agent_type?: string;
 }
 
 type ChatState = 'idle' | 'selecting' | 'responding';
@@ -35,24 +43,32 @@ const App: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
   const [marketplaceAgents, setMarketplaceAgents] = useState<Agent[]>([]);
-  const [ollamaConnected, setOllamaConnected] = useState<boolean>(false);
+  const [backendConnected, setBackendConnected] = useState<boolean>(false);
   const [sessionId] = useState(() => `session_${Math.random().toString(36).substr(2, 9)}`);
+  const [apiKeyInput, setApiKeyInput] = useState<{[key: string]: string}>({});
+  const [showApiKeyModal, setShowApiKeyModal] = useState<Agent | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize agents and check backend connection
   useEffect(() => {
     loadAgentsFromBackend();
+    loadMarketplaceAgents();
     checkBackendConnection();
+    
+    // Check connection every 10 seconds
+    const interval = setInterval(checkBackendConnection, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const checkBackendConnection = async () => {
     try {
       const baseURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
       const response = await fetch(`${baseURL}/api/health`);
-      setOllamaConnected(response.ok);
+      setBackendConnected(response.ok);
     } catch (error) {
-      setOllamaConnected(false);
+      setBackendConnected(false);
     }
   };
 
@@ -92,7 +108,6 @@ const App: React.FC = () => {
     }
   };
 
-
   // Load agents from backend
   const loadAgentsFromBackend = async () => {
     try {
@@ -107,6 +122,19 @@ const App: React.FC = () => {
     }
   };
 
+  // Load marketplace agents
+  const loadMarketplaceAgents = async () => {
+    try {
+      const baseURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+      const response = await fetch(`${baseURL}/api/marketplace`);
+      if (response.ok) {
+        const agents = await response.json();
+        setMarketplaceAgents(agents);
+      }
+    } catch (error) {
+      console.error('Failed to load marketplace agents:', error);
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || chatState !== 'idle') return;
@@ -189,20 +217,55 @@ const App: React.FC = () => {
 
     updateMessage(currentContent, false);
     setChatState('idle');
+    inputRef.current?.focus();
   };
 
   const addAgentFromMarketplace = async (agent: Agent) => {
     try {
+      if (agent.requires_api_key) {
+        setShowApiKeyModal(agent);
+        return;
+      }
+
       await callBackendAPI('/api/agents', {
+        id: agent.id,
         name: agent.name,
         description: agent.description,
-        type: agent.type,
-        capabilities: agent.capabilities
+        category: agent.category,
+        icon: "🤖",
+        rating: 4.5,
+        downloads: 0,
+        capabilities: agent.capabilities,
+        agent_type: agent.agent_type || "GenericLLMAgent"
       });
-      // Reload agents from backend
+      
       await loadAgentsFromBackend();
-      // Remove from marketplace
       setMarketplaceAgents(prev => prev.filter(a => a.id !== agent.id));
+    } catch (error) {
+      console.error('Failed to add agent:', error);
+    }
+  };
+
+  const addAgentWithApiKey = async (agent: Agent, apiKey: string) => {
+    try {
+      const agentData = {
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        category: agent.category,
+        icon: "🤖",
+        rating: 4.5,
+        downloads: 0,
+        capabilities: agent.capabilities,
+        agent_type: agent.agent_type || "GenericLLMAgent",
+        api_key: apiKey
+      };
+      
+      await callBackendAPI('/api/agents', agentData);
+      await loadAgentsFromBackend();
+      setMarketplaceAgents(prev => prev.filter(a => a.id !== agent.id));
+      setShowApiKeyModal(null);
+      setApiKeyInput(prev => ({ ...prev, [agent.id]: '' }));
     } catch (error) {
       console.error('Failed to add agent:', error);
     }
@@ -213,9 +276,7 @@ const App: React.FC = () => {
       const agent = availableAgents.find(a => a.id === agentId);
       if (agent && agent.name !== 'Supervisor') {
         await callBackendAPI(`/api/agents/${agentId}`, {}, 'DELETE');
-        // Reload agents from backend
         await loadAgentsFromBackend();
-        // Add back to marketplace
         setMarketplaceAgents(prev => [...prev, { ...agent, status: 'available' as const }]);
       }
     } catch (error) {
@@ -226,82 +287,166 @@ const App: React.FC = () => {
   const getAgentIcon = (agentName: string) => {
     switch (agentName?.toLowerCase()) {
       case 'coder':
-        return <Code style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Code className="w-5 h-5" />;
       case 'researcher':
-        return <Search style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Search className="w-5 h-5" />;
       case 'supervisor':
-        return <Brain style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Brain className="w-5 h-5" />;
       case 'writer':
-        return <MessageSquare style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <PenTool className="w-5 h-5" />;
       case 'data analyst':
-        return <Settings style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Database className="w-5 h-5" />;
       case 'designer':
-        return <Sparkles style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Sparkles className="w-5 h-5" />;
       case 'translator':
-        return <MessageSquare style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Languages className="w-5 h-5" />;
+      case 'openai agent':
+        return <Zap className="w-5 h-5" />;
+      case 'anthropic assistant':
+        return <Shield className="w-5 h-5" />;
       default:
-        return <Bot style={{ width: '1.25rem', height: '1.25rem' }} />;
+        return <Bot className="w-5 h-5" />;
     }
   };
 
   const getAgentColorStyle = (agentName: string) => {
-    switch (agentName?.toLowerCase()) {
-      case 'coder':
-        return { color: '#059669', backgroundColor: '#dcfce7' };
-      case 'researcher':
-        return { color: '#2563eb', backgroundColor: '#dbeafe' };
-      case 'supervisor':
-        return { color: '#7c3aed', backgroundColor: '#ede9fe' };
-      case 'writer':
-        return { color: '#dc2626', backgroundColor: '#fee2e2' };
-      case 'data analyst':
-        return { color: '#ea580c', backgroundColor: '#fed7aa' };
-      case 'designer':
-        return { color: '#db2777', backgroundColor: '#fce7f3' };
-      case 'translator':
-        return { color: '#0891b2', backgroundColor: '#cffafe' };
-      default:
-        return { color: '#6b7280', backgroundColor: '#f3f4f6' };
-    }
+    const colors: {[key: string]: {bg: string, text: string, border: string}} = {
+      'coder': {
+        bg: 'rgba(0, 212, 212, 0.1)',
+        text: '#00d4d4',
+        border: 'rgba(0, 212, 212, 0.3)'
+      },
+      'researcher': {
+        bg: 'rgba(139, 92, 246, 0.1)',
+        text: '#8b5cf6',
+        border: 'rgba(139, 92, 246, 0.3)'
+      },
+      'supervisor': {
+        bg: 'rgba(245, 158, 11, 0.1)',
+        text: '#f59e0b',
+        border: 'rgba(245, 158, 11, 0.3)'
+      },
+      'writer': {
+        bg: 'rgba(239, 68, 68, 0.1)',
+        text: '#ef4444',
+        border: 'rgba(239, 68, 68, 0.3)'
+      },
+      'data analyst': {
+        bg: 'rgba(249, 115, 22, 0.1)',
+        text: '#f97316',
+        border: 'rgba(249, 115, 22, 0.3)'
+      },
+      'designer': {
+        bg: 'rgba(236, 72, 153, 0.1)',
+        text: '#ec4899',
+        border: 'rgba(236, 72, 153, 0.3)'
+      },
+      'translator': {
+        bg: 'rgba(34, 197, 94, 0.1)',
+        text: '#22c55e',
+        border: 'rgba(34, 197, 94, 0.3)'
+      }
+    };
+
+    const defaultColor = {
+      bg: 'rgba(100, 100, 100, 0.1)',
+      text: '#9ca3af',
+      border: 'rgba(100, 100, 100, 0.3)'
+    };
+
+    return colors[agentName?.toLowerCase()] || defaultColor;
   };
 
-  const renderChatPage = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+  const renderChatPage = () => {
+    const colorStyle = getAgentColorStyle(selectedAgent?.name || '');
+    
+    return (
+      <div className="flex-1 flex flex-col h-screen relative">
+        {/* Animated Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+
       {/* Chat Header */}
-      <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-          Chat with Orchestrator
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-surface border-b border-white/10 px-8 py-6 relative z-10"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-light text-white/95 tracking-tight">
+                AI Orchestrator
         </h2>
-        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.5rem 0 0 0' }}>
-          Ask questions and get routed to the right agent
-        </p>
-        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.5rem' }}>
-          Session: {sessionId}
+              <p className="text-sm text-white/60 mt-1 font-light">
+                Intelligent routing to specialized agents
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="status-indicator">
+                <div className={`status-dot ${backendConnected ? 'online' : 'offline'}`} />
+                <span className="text-xs">
+                  {backendConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+              <div className="text-xs text-white/40 font-mono">
+                {sessionId}
+              </div>
         </div>
       </div>
+        </motion.div>
 
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <AnimatePresence>
-          {messages.map((message) => (
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 relative z-10">
+          {messages.length === 0 && (
             <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={{ display: 'flex', justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start' }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center h-full text-center"
             >
-              <div className={`chat-bubble ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-agent'}`}>
+              <div className="gradient-primary w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-cyan-500/20">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-xl font-light text-white/80 mb-2">
+                Welcome to Cordon AI
+              </h3>
+              <p className="text-sm text-white/50 max-w-md font-light">
+                Start a conversation and I'll route you to the perfect agent for your needs
+              </p>
+            </motion.div>
+          )}
+
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`chat-bubble ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-agent'} max-w-2xl`}>
                 {message.role === 'assistant' && message.agentName && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500', width: 'fit-content', ...getAgentColorStyle(message.agentName) }}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="agent-badge mb-3"
+                      style={{
+                        backgroundColor: getAgentColorStyle(message.agentName).bg,
+                        borderColor: getAgentColorStyle(message.agentName).border,
+                        color: getAgentColorStyle(message.agentName).text
+                      }}
+                    >
                     {getAgentIcon(message.agentName)}
-                    <span>{message.agentName}</span>
-                  </div>
+                      <span className="font-medium">{message.agentName}</span>
+                    </motion.div>
                 )}
                 <div className="streaming-text">
                   {message.content}
                   {message.isStreaming && (
-                    <span style={{ display: 'inline-block', width: '0.125rem', height: '1.25rem', backgroundColor: '#3b82f6', marginLeft: '0.25rem' }} className="animate-blink"></span>
+                      <span className="cursor-blink" />
                   )}
                 </div>
               </div>
@@ -313,15 +458,19 @@ const App: React.FC = () => {
         <AnimatePresence>
           {chatState === 'selecting' && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              style={{ display: 'flex', justifyContent: 'center' }}
-            >
-              <div className="agent-selection-animation" style={{ padding: '0.75rem 1rem', borderRadius: '1rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                <Brain style={{ width: '1.25rem', height: '1.25rem' }} className="animate-pulse" />
-                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>Supervisor is selecting the best agent...</span>
-                <Loader2 style={{ width: '1rem', height: '1rem' }} className="animate-spin" />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="flex justify-center"
+              >
+                <div className="agent-selection-animation">
+                  <Brain className="w-5 h-5 animate-pulse text-cyan-400" />
+                  <span className="text-sm font-light">Analyzing request...</span>
+                  <div className="typing-indicator">
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
+                  </div>
               </div>
             </motion.div>
           )}
@@ -334,15 +483,25 @@ const App: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              style={{ display: 'flex', justifyContent: 'center' }}
-            >
-              <div className="agent-selection-animation" style={{ padding: '0.75rem 1rem', borderRadius: '1rem', border: '1px solid #e5e7eb', ...getAgentColorStyle(selectedAgent.name) }}>
+                className="flex justify-start"
+              >
+                <div 
+                  className="agent-selection-animation"
+                  style={{
+                    backgroundColor: getAgentColorStyle(selectedAgent.name).bg,
+                    borderColor: getAgentColorStyle(selectedAgent.name).border
+                  }}
+                >
+                  <div style={{ color: getAgentColorStyle(selectedAgent.name).text }}>
                 {getAgentIcon(selectedAgent.name)}
-                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{selectedAgent.name} is responding...</span>
+                  </div>
+                  <span className="text-sm font-light text-white/80">
+                    {selectedAgent.name} is typing
+                  </span>
                 <div className="typing-indicator">
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="typing-dot" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
                 </div>
               </div>
             </motion.div>
@@ -352,265 +511,401 @@ const App: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ borderTop: '1px solid #e5e7eb', padding: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
+        {/* Input Area */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-surface border-t border-white/10 px-6 py-4 relative z-10"
+        >
+          <div className="flex gap-3 w-full">
             <input
+              ref={inputRef}
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Ask me anything... (e.g., 'Help me write Python code' or 'Research AI trends')"
-              style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.75rem', outline: 'none', fontSize: '1rem' }}
+              placeholder="Ask anything... I'll find the right agent for you"
+              className="input-field flex-1"
               disabled={chatState !== 'idle'}
             />
-          </div>
-          <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             onClick={sendMessage}
             disabled={!inputMessage.trim() || chatState !== 'idle'}
-            style={{ padding: '0.75rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', borderRadius: '0.75rem', border: 'none', cursor: chatState === 'idle' ? 'pointer' : 'not-allowed', opacity: chatState === 'idle' ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="btn btn-primary px-6 flex items-center gap-2"
+              style={{ opacity: chatState === 'idle' && inputMessage.trim() ? 1 : 0.5 }}
           >
             {chatState === 'idle' ? (
-              <Send style={{ width: '1.25rem', height: '1.25rem' }} />
+                <>
+                  <Send className="w-4 h-4" />
+                  <span className="hidden sm:inline">Send</span>
+                </>
             ) : (
-              <Loader2 style={{ width: '1.25rem', height: '1.25rem' }} className="animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
             )}
-          </button>
+            </motion.button>
         </div>
-      </div>
+        </motion.div>
     </div>
   );
+  };
 
   const renderMarketplacePage = () => (
-    <div style={{ padding: '1.5rem' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-8"
+    >
+      <div className="mb-8 text-center">
+        <h2 className="text-3xl font-light text-white/95 mb-2 tracking-tight">
         Agent Marketplace
       </h2>
-      <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-        Browse and add new agents to your orchestrator
+        <p className="text-base text-white/60 font-light">
+          Discover and integrate specialized AI agents
       </p>
+      </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-        {marketplaceAgents.map((agent) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <AnimatePresence>
+          {marketplaceAgents.map((agent, index) => (
           <motion.div
             key={agent.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '1rem' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <div style={{ padding: '0.5rem', borderRadius: '0.5rem', ...getAgentColorStyle(agent.name) }}>
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ y: -4 }}
+              className="card group"
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div 
+                  className="p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: getAgentColorStyle(agent.name).bg,
+                    color: getAgentColorStyle(agent.name).text
+                  }}
+                >
                 {getAgentIcon(agent.name)}
               </div>
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', margin: 0 }}>
+                <div className="flex-1">
+                  <h3 className="text-base font-normal text-white/90">
                   {agent.name}
                 </h3>
-                <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
-                  {agent.type}
-                </p>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    {agent.category}
+                  </p>
+                  {agent.requires_api_key && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <Shield className="w-3 h-3 text-amber-500" />
+                      <span className="text-xs text-amber-500">API Key Required</span>
+                    </div>
+                  )}
               </div>
             </div>
             
-            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
+              <p className="text-sm text-white/60 mb-4 line-clamp-2 font-light">
               {agent.description}
             </p>
             
-            <div style={{ marginBottom: '0.75rem' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
-                Capabilities:
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                {agent.capabilities.map((capability) => (
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {agent.capabilities.slice(0, 3).map((capability) => (
                   <span
                     key={capability}
-                    style={{ fontSize: '0.75rem', padding: '0.125rem 0.375rem', backgroundColor: '#f3f4f6', color: '#374151', borderRadius: '0.375rem' }}
+                      className="text-xs px-2 py-1 rounded-md bg-white/5 text-white/50 font-light"
                   >
                     {capability}
                   </span>
                 ))}
+                  {agent.capabilities.length > 3 && (
+                    <span className="text-xs px-2 py-1 text-white/40">
+                      +{agent.capabilities.length - 3} more
+                    </span>
+                  )}
+                </div>
               </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => addAgentFromMarketplace(agent)}
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Agent
+              </motion.button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
             </div>
             
-            <button
-              onClick={() => addAgentFromMarketplace(agent)}
-              style={{ width: '100%', padding: '0.5rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+      {/* API Key Modal */}
+      <AnimatePresence>
+        {showApiKeyModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-backdrop"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowApiKeyModal(null);
+                setApiKeyInput(prev => ({ ...prev, [showApiKeyModal.id]: '' }));
+              }
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="card modal-content max-w-md w-full mx-4"
             >
-              <Plus style={{ width: '1rem', height: '1rem' }} />
+              <div className="flex items-start gap-3 mb-4">
+                <div 
+                  className="p-2.5 rounded-xl"
+                  style={{
+                    backgroundColor: getAgentColorStyle(showApiKeyModal.name).bg,
+                    color: getAgentColorStyle(showApiKeyModal.name).text
+                  }}
+                >
+                  {getAgentIcon(showApiKeyModal.name)}
+                </div>
+                <div>
+                  <h3 className="text-lg font-normal text-white/90">
+                    Configure {showApiKeyModal.name}
+                  </h3>
+                  <p className="text-sm text-white/60 mt-1 font-light">
+                    This agent requires authentication
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-light text-white/70 mb-2">
+                  API Key
+                </label>
+                <input
+                  type="password"
+                  value={apiKeyInput[showApiKeyModal.id] || ''}
+                  onChange={(e) => setApiKeyInput(prev => ({ ...prev, [showApiKeyModal.id]: e.target.value }))}
+                  placeholder={showApiKeyModal.api_key_placeholder || 'Enter your API key...'}
+                  className="input-field w-full"
+                  autoFocus
+                />
+                <p className="text-xs text-white/40 mt-2 font-light">
+                  Your API key will be securely stored and used only for this agent
+                </p>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowApiKeyModal(null);
+                    setApiKeyInput(prev => ({ ...prev, [showApiKeyModal.id]: '' }));
+                  }}
+                  className="btn btn-secondary px-4"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => addAgentWithApiKey(showApiKeyModal, apiKeyInput[showApiKeyModal.id] || '')}
+                  disabled={!apiKeyInput[showApiKeyModal.id]}
+                  className="btn btn-primary px-6"
+                  style={{ opacity: apiKeyInput[showApiKeyModal.id] ? 1 : 0.5 }}
+                >
               Add Agent
-            </button>
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
-        ))}
-      </div>
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 
   const renderAgentsPage = () => (
-    <div style={{ padding: '1.5rem' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
-        Current Agents
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-8"
+    >
+      <div className="mb-8 text-center">
+        <h2 className="text-3xl font-light text-white/95 mb-2 tracking-tight">
+          Active Agents
       </h2>
-      <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-        Manage your active agents
+        <p className="text-base text-white/60 font-light">
+          Manage your integrated AI agents
       </p>
+      </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-        {availableAgents.map((agent) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <AnimatePresence>
+          {availableAgents.map((agent, index) => (
           <motion.div
             key={agent.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '1rem' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ padding: '0.5rem', borderRadius: '0.5rem', ...getAgentColorStyle(agent.name) }}>
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ y: -4 }}
+              className="card group relative"
+            >
+              {agent.name === 'Supervisor' && (
+                <div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30">
+                  <span className="text-xs text-amber-500 font-medium">Core</span>
+                </div>
+              )}
+              
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3">
+                  <div 
+                    className="p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110"
+                    style={{
+                      backgroundColor: getAgentColorStyle(agent.name).bg,
+                      color: getAgentColorStyle(agent.name).text
+                    }}
+                  >
                   {getAgentIcon(agent.name)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', margin: 0 }}>
+                    <h3 className="text-base font-normal text-white/90">
                     {agent.name}
                   </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <div style={{ width: '0.375rem', height: '0.375rem', backgroundColor: ollamaConnected ? '#10b981' : '#ef4444', borderRadius: '50%' }}></div>
-                      <span>{ollamaConnected ? 'Connected' : 'Disconnected'}</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="status-indicator">
+                        <div className={`status-dot ${backendConnected ? 'online' : 'offline'}`} />
+                        <span className="text-xs">Active</span>
                     </div>
-                    <span>•</span>
-                    <span>{agent.requestCount} requests</span>
                   </div>
                 </div>
               </div>
               
               {agent.name !== 'Supervisor' && (
-                <button
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   onClick={() => removeAgent(agent.id)}
-                  style={{ padding: '0.25rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+                    className="btn-ghost text-red-400 hover:bg-red-400/10"
                 >
-                  <Trash2 style={{ width: '1rem', height: '1rem' }} />
-                </button>
+                    <Trash2 className="w-4 h-4" />
+                  </motion.button>
               )}
             </div>
             
-            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
+              <p className="text-sm text-white/60 mb-4 line-clamp-2 font-light">
               {agent.description}
             </p>
             
-            <div>
-              <p style={{ fontSize: '0.75rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
-                Capabilities:
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                {agent.capabilities.map((capability) => (
+              <div className="flex items-center justify-between text-xs text-white/40 mb-4">
+                <span className="flex items-center gap-1">
+                  <Activity className="w-3 h-3" />
+                  {agent.requestCount} requests
+                </span>
+                <span className="flex items-center gap-1">
+                  <Cpu className="w-3 h-3" />
+                  {agent.capabilities.length} capabilities
+                </span>
+              </div>
+              
+              <div className="flex flex-wrap gap-1.5">
+                {agent.capabilities.slice(0, 2).map((capability) => (
                   <span
                     key={capability}
-                    style={{ fontSize: '0.75rem', padding: '0.125rem 0.375rem', backgroundColor: '#f3f4f6', color: '#374151', borderRadius: '0.375rem' }}
+                    className="text-xs px-2 py-1 rounded-md bg-white/5 text-white/50 font-light"
                   >
                     {capability}
                   </span>
                 ))}
-              </div>
+                {agent.capabilities.length > 2 && (
+                  <span className="text-xs px-2 py-1 text-white/40">
+                    +{agent.capabilities.length - 2} more
+                  </span>
+                )}
             </div>
           </motion.div>
         ))}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex' }}>
+    <div className="min-h-screen bg-gradient-to-br from-black to-gray-900 flex">
       {/* Sidebar */}
-      <div style={{ width: '250px', backgroundColor: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
+      <motion.div 
+        initial={{ x: -280 }}
+        animate={{ x: 0 }}
+        className="sidebar w-72 flex flex-col fixed h-screen z-20"
+      >
         {/* Logo */}
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div className="gradient-bg" style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles style={{ width: '1rem', height: '1rem', color: 'white' }} />
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="gradient-primary w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Cordon AI</h1>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>Multi-Agent Orchestrator</p>
+              <h1 className="text-xl font-light text-white/95 tracking-tight">
+                Cordon AI
+              </h1>
+              <p className="text-xs text-white/50 font-light">
+                Multi-Agent Orchestrator
+              </p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <div style={{ flex: 1, padding: '1rem' }}>
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <nav className="flex-1 p-4 space-y-1">
             <button
               onClick={() => setCurrentPage('chat')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                backgroundColor: currentPage === 'chat' ? '#3b82f6' : 'transparent',
-                color: currentPage === 'chat' ? 'white' : '#6b7280',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500'
-              }}
-            >
-              <MessageSquare style={{ width: '1rem', height: '1rem' }} />
-              Chat Interface
+            className={`nav-item w-full ${currentPage === 'chat' ? 'active' : ''}`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Chat Interface</span>
+            {currentPage === 'chat' && (
+              <ChevronRight className="w-4 h-4 ml-auto" />
+            )}
             </button>
             
             <button
               onClick={() => setCurrentPage('marketplace')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                backgroundColor: currentPage === 'marketplace' ? '#3b82f6' : 'transparent',
-                color: currentPage === 'marketplace' ? 'white' : '#6b7280',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500'
-              }}
-            >
-              <Store style={{ width: '1rem', height: '1rem' }} />
-              Agent Marketplace
+            className={`nav-item w-full ${currentPage === 'marketplace' ? 'active' : ''}`}
+          >
+            <Store className="w-4 h-4" />
+            <span>Marketplace</span>
+            {currentPage === 'marketplace' && (
+              <ChevronRight className="w-4 h-4 ml-auto" />
+            )}
             </button>
             
             <button
               onClick={() => setCurrentPage('agents')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                backgroundColor: currentPage === 'agents' ? '#3b82f6' : 'transparent',
-                color: currentPage === 'agents' ? 'white' : '#6b7280',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500'
-              }}
-            >
-              <Users style={{ width: '1rem', height: '1rem' }} />
-              Current Agents
+            className={`nav-item w-full ${currentPage === 'agents' ? 'active' : ''}`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Active Agents</span>
+            {currentPage === 'agents' && (
+              <ChevronRight className="w-4 h-4 ml-auto" />
+            )}
             </button>
           </nav>
-        </div>
 
-        {/* Status */}
-        <div style={{ padding: '1rem', borderTop: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#6b7280' }}>
-            <div style={{ width: '0.5rem', height: '0.5rem', backgroundColor: '#10b981', borderRadius: '50%' }}></div>
-            <span>React App Connected</span>
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center gap-2 text-xs text-white/40">
+            <div className={`status-dot ${backendConnected ? 'online' : 'offline'}`} />
+            <span>System {backendConnected ? 'Online' : 'Offline'}</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-1 main-content">
         {currentPage === 'chat' && renderChatPage()}
         {currentPage === 'marketplace' && renderMarketplacePage()}
         {currentPage === 'agents' && renderAgentsPage()}

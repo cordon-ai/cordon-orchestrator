@@ -3,16 +3,16 @@ Simple orchestrator for managing agents and routing requests.
 """
 from typing import List, Optional, Any
 from .agents import Agent
-from .types import ConversationMessage, AgentSquadConfig
+from .types import ConversationMessage, AgentTeamConfig
 
 
-class AgentSquad:
+class AgentTeam:
     """Simple orchestrator that manages a collection of agents."""
     
-    def __init__(self, options: Optional[AgentSquadConfig] = None):
+    def __init__(self, options: Optional[AgentTeamConfig] = None):
         self.agents: List[Agent] = []
         self.supervisor: Optional[Agent] = None
-        self.options = options or AgentSquadConfig()
+        self.options = options or AgentTeamConfig()
     
     def add_agent(self, agent: Agent) -> None:
         """Add an agent to the orchestrator."""

@@ -7,7 +7,7 @@ __all__ = [
     'AgentProviderType',
     'AgentTypes',
     'TemplateVariables',
-    'AgentSquadConfig',
+    'AgentTeamConfig',
     'BEDROCK_MODEL_ID_CLAUDE_3_5_SONNET',
     'ANTHROPIC_MODEL_ID_CLAUDE_3_5_SONNET'
 ]

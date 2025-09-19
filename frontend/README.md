@@ -69,7 +69,7 @@ You can customize the frontend by:
 
 This frontend is designed to work seamlessly with the existing Cordon package:
 
-- Uses the same `AgentSquad` orchestrator
+- Uses the same `AgentTeam` orchestrator
 - Implements the same agent configuration
 - Maintains compatibility with existing agent types
 - Can be extended to support additional agent types

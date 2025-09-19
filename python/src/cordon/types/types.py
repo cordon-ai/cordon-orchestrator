@@ -60,7 +60,7 @@ class TimestampedMessage(ConversationMessage):
 TemplateVariables = dict[str, str | list[str]]
 
 @dataclass
-class AgentSquadConfig:
+class AgentTeamConfig:
     LOG_AGENT_CHAT: bool = False    # pylint: disable=invalid-name
     LOG_CLASSIFIER_CHAT: bool = False   # pylint: disable=invalid-name
     LOG_CLASSIFIER_RAW_OUTPUT: bool = False # pylint: disable=invalid-name

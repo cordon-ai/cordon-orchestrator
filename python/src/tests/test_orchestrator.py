@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from agent_squad.types import (
     ConversationMessage,
     ParticipantRole,
-    AgentSquadConfig,
+    AgentTeamConfig,
     TimestampedMessage
 )
 from agent_squad.classifiers import Classifier, ClassifierResult
@@ -19,7 +19,7 @@ from agent_squad.agents import (
 )
 from agent_squad.storage import ChatStorage, InMemoryChatStorage
 from agent_squad.utils.logger import Logger
-from agent_squad.orchestrator import AgentSquad
+from agent_squad.orchestrator import AgentTeam
 
 @pytest.fixture
 def mock_boto3_client():
@@ -67,7 +67,7 @@ def mock_streaming_agent():
 
 @pytest.fixture
 def orchestrator(mock_storage, mock_classifier, mock_logger, mock_agent, mock_boto3_client):
-    return AgentSquad(
+    return AgentTeam(
         storage=mock_storage,
         classifier=mock_classifier,
         logger=mock_logger,
@@ -76,7 +76,7 @@ def orchestrator(mock_storage, mock_classifier, mock_logger, mock_agent, mock_bo
 
 def test_init_with_dict_options(mock_boto3_client):
     options = {"MAX_MESSAGE_PAIRS_PER_AGENT": 10}
-    orchestrator = AgentSquad(
+    orchestrator = AgentTeam(
         options=options,
         classifier=Mock(spec=Classifier)
     )
@@ -84,7 +84,7 @@ def test_init_with_dict_options(mock_boto3_client):
 
 def test_init_with_invalid_options(mock_boto3_client):
     with pytest.raises(ValueError):
-        AgentSquad(options="invalid")
+        AgentTeam(options="invalid")
 
 # Test agent management
 def test_add_agent(orchestrator, mock_agent):

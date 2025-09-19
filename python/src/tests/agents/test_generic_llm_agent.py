@@ -1,7 +1,7 @@
 from cordon.agents.generic_llm_agent import GenericLLMAgent, GenericLLMAgentOptions
 from cordon.agents import SupervisorAgent, SupervisorAgentOptions, AgentResponse
-from cordon.orchestrator import AgentSquad
-from cordon.types import AgentSquadConfig
+from cordon.orchestrator import AgentTeam
+from cordon.types import AgentTeamConfig
 
 import os, requests 
 import asyncio
@@ -10,7 +10,7 @@ import sys
 import json
 from unittest.mock import patch, MagicMock
 
-orchestrator = AgentSquad(options=AgentSquadConfig(
+orchestrator = AgentTeam(options=AgentTeamConfig(
   LOG_AGENT_CHAT=True,
   LOG_CLASSIFIER_CHAT=True,
   LOG_CLASSIFIER_RAW_OUTPUT=True,
@@ -139,7 +139,7 @@ orchestrator.add_supervisor(supervisor)
 #     trace=True
 # ))
 
-async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str):
+async def handle_request(_orchestrator: AgentTeam, _user_input: str, _user_id: str, _session_id: str):
     response = await _orchestrator.route_request(_user_input, _user_id, _session_id)
     
     # Handle different response types
