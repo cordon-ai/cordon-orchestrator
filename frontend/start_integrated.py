@@ -20,7 +20,6 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Requ
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
 import uvicorn
 
 # Import cordon components
@@ -29,6 +28,9 @@ from cordon.orchestrator import AgentTeam
 from cordon.types import AgentTeamConfig, ConversationMessage, ParticipantRole
 from cordon.agents.openai_agent import OpenAIAgent, OpenAIAgentOptions
 from cordon.agents.anthropic_agent import AnthropicAgent, AnthropicAgentOptions
+
+# Import schemas
+from backend.models.schemas import ChatRequest, ChatResponse, AgentInfo, MarketplaceAgent, UpdateAgentRequest
 
 # Initialize FastAPI app
 app = FastAPI(title="Cordon AI Frontend", version="1.0.0")
@@ -51,39 +53,6 @@ templates = Jinja2Templates(directory="templates")
 orchestrator = None
 active_connections: Dict[str, WebSocket] = {}
 
-# Pydantic models for API
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str
-    user_id: str
-
-class ChatResponse(BaseModel):
-    response: str
-    agent_name: str
-    session_id: str
-
-class AgentInfo(BaseModel):
-    id: str
-    name: str
-    description: str
-    type: str
-    status: str
-    requestCount: int
-    capabilities: List[str] = []
-
-class MarketplaceAgent(BaseModel):
-    id: str
-    name: str
-    category: str  # Changed from 'category' to match frontend
-    description: str
-    icon: str
-    rating: float
-    downloads: int
-    capabilities: List[str] = []
-    requires_api_key: bool = False
-    api_key_placeholder: str = ""
-    agent_type: str = "GenericLLMAgent"  # Type of agent class to instantiate
-    api_key: Optional[str] = None  # API key for agents that require it
 
 # Helper function to get agent capabilities
 def get_agent_capabilities(agent_name: str) -> List[str]:
@@ -593,9 +562,6 @@ async def add_agent(agent: MarketplaceAgent):
         print(f"Error adding agent: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error adding agent: {str(e)}")
 
-class UpdateAgentRequest(BaseModel):
-    agent_id: str
-    api_key: str
 
 @app.put("/api/agents/{agent_id}")
 async def update_agent(agent_id: str, request: UpdateAgentRequest):
