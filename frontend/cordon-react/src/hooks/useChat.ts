@@ -9,10 +9,12 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamingRef = useRef<boolean>(false);
 
   const streamResponse = async (messageId: string, fullResponse: string) => {
     const words = fullResponse.split(' ');
     let currentContent = '';
+    streamingRef.current = true;
 
     const updateMessage = (content: string, isStreaming: boolean = true) => {
       setMessages(prev => prev.map(msg =>
@@ -22,13 +24,52 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
       ));
     };
 
+    // Check if this is a complete response that should be shown immediately
+    const isCompleteResponse = fullResponse.length > 0 && !fullResponse.includes('...');
+    const isShortMessage = words.length <= 15;
+    
+    // If it's a complete short response, show it immediately
+    if (isCompleteResponse && isShortMessage) {
+      updateMessage(fullResponse, false);
+      streamingRef.current = false;
+      setChatState('idle');
+      inputRef.current?.focus();
+      return;
+    }
+
+    // For longer messages, use adaptive streaming
+    const baseDelay = isShortMessage ? 15 : 25;
+    
     for (let i = 0; i < words.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Check if streaming was stopped
+      if (!streamingRef.current) {
+        break;
+      }
+      
+      // Adaptive delay based on position in message
+      const progress = i / words.length;
+      let delay = baseDelay;
+      
+      // Speed up as we approach the end
+      if (progress > 0.8) {
+        delay = Math.max(5, baseDelay * 0.3); // Much faster near the end
+      } else if (progress > 0.6) {
+        delay = Math.max(8, baseDelay * 0.6); // Moderately faster
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
       currentContent += (i > 0 ? ' ' : '') + words[i];
       updateMessage(currentContent);
     }
 
     updateMessage(currentContent, false);
+    streamingRef.current = false;
+    setChatState('idle');
+    inputRef.current?.focus();
+  };
+
+  const stopStreaming = () => {
+    streamingRef.current = false;
     setChatState('idle');
     inputRef.current?.focus();
   };
@@ -85,6 +126,7 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
     chatState,
     selectedAgent,
     sendMessage,
+    stopStreaming,
     inputRef
   };
 };

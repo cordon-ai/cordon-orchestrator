@@ -1,5 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Message } from '../../types';
 import { getAgentIcon, getAgentColorStyle } from '../../utils/agentHelpers';
 
@@ -37,7 +41,62 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, index }) => {
           </motion.div>
         )}
         <div className="streaming-text">
-          {message.content}
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            components={{
+              // Custom styling for markdown elements
+              h1: ({children}) => <h1 className="text-xl font-bold mb-2 text-white">{children}</h1>,
+              h2: ({children}) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
+              h3: ({children}) => <h3 className="text-base font-bold mb-1 text-white">{children}</h3>,
+              p: ({children}) => <p className="mb-2 text-white">{children}</p>,
+              strong: ({children}) => <strong className="font-bold text-white">{children}</strong>,
+              em: ({children}) => <em className="italic text-white">{children}</em>,
+              code: ({children, className, ...props}) => {
+                const match = /language-(\w+)/.exec(className || '');
+                const language = match ? match[1] : '';
+                const isInline = !className;
+                
+                if (isInline) {
+                  return <code className="bg-gray-700 px-1 py-0.5 rounded text-sm text-green-400">{children}</code>;
+                }
+                
+                return (
+                  <div className="my-4 rounded-lg overflow-hidden border border-gray-600">
+                    <SyntaxHighlighter
+                      style={vscDarkPlus}
+                      language={language || 'text'}
+                      PreTag="div"
+                      customStyle={{
+                        margin: 0,
+                        padding: '1rem',
+                        backgroundColor: '#1e1e1e',
+                        fontSize: '0.875rem',
+                        lineHeight: '1.5',
+                      }}
+                      codeTagProps={{
+                        style: {
+                          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                        }
+                      }}
+                    >
+                      {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                  </div>
+                );
+              },
+              pre: ({children}) => {
+                // The SyntaxHighlighter handles pre styling, so we just pass through
+                return <>{children}</>;
+              },
+              ul: ({children}) => <ul className="list-disc list-inside mb-2 text-white">{children}</ul>,
+              ol: ({children}) => <ol className="list-decimal list-inside mb-2 text-white">{children}</ol>,
+              li: ({children}) => <li className="mb-1 text-white">{children}</li>,
+              blockquote: ({children}) => <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
+              a: ({children, href}) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
           {message.isStreaming && (
             <span className="cursor-blink" />
           )}

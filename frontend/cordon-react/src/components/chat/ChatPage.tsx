@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Message, Agent, ChatState } from '../../types';
 import ChatHeader from './ChatHeader';
 import ChatInput from './ChatInput';
@@ -12,6 +12,7 @@ interface ChatPageProps {
   inputMessage: string;
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
+  onStopStreaming?: () => void;
   chatState: ChatState;
   selectedAgent: Agent | null;
   backendConnected: boolean;
@@ -23,6 +24,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
   inputMessage,
   onInputChange,
   onSendMessage,
+  onStopStreaming,
   chatState,
   selectedAgent,
   backendConnected,
@@ -30,10 +32,64 @@ const ChatPage: React.FC<ChatPageProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State for intelligent scrolling
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
+  // Check if user is near the bottom of the chat
+  const isNearBottom = useCallback(() => {
+    if (!messagesContainerRef.current) return true;
+    
+    const container = messagesContainerRef.current;
+    const threshold = 100; // pixels from bottom
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    
+    return distanceFromBottom <= threshold;
+  }, []);
+
+  // Handle scroll events to detect user scrolling
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+    
+    const nearBottom = isNearBottom();
+    setIsUserScrolling(!nearBottom);
+    setShouldAutoScroll(nearBottom);
+  }, [isNearBottom]);
+
+  // Auto-scroll to bottom only when appropriate
+  const scrollToBottom = useCallback((smooth: boolean = true) => {
+    if (messagesEndRef.current && shouldAutoScroll) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? 'smooth' : 'auto' 
+      });
+    }
+  }, [shouldAutoScroll]);
+
+  // Auto-scroll when new messages arrive (only if user is at bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldAutoScroll) {
+      scrollToBottom(true);
+    }
+  }, [messages, shouldAutoScroll, scrollToBottom]);
+
+  // Reset scroll behavior when streaming starts
+  useEffect(() => {
+    if (chatState === 'responding') {
+      setShouldAutoScroll(true);
+      setIsUserScrolling(false);
+    }
+  }, [chatState]);
+
+  // Add scroll event listener
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   return (
     <div className="flex-1 flex flex-col h-screen relative">
@@ -46,7 +102,10 @@ const ChatPage: React.FC<ChatPageProps> = ({
       <ChatHeader backendConnected={backendConnected} sessionId={sessionId} />
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 relative z-10">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-4 relative z-10"
+      >
         {messages.length === 0 && <ChatWelcome />}
 
         <AnimatePresence>
@@ -60,10 +119,18 @@ const ChatPage: React.FC<ChatPageProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
+
       <ChatInput
         inputMessage={inputMessage}
         onInputChange={onInputChange}
         onSendMessage={onSendMessage}
+        onStopStreaming={onStopStreaming}
+        onScrollToBottom={() => {
+          setShouldAutoScroll(true);
+          setIsUserScrolling(false);
+          scrollToBottom(true);
+        }}
+        isUserScrolling={isUserScrolling}
         chatState={chatState}
         inputRef={inputRef}
       />

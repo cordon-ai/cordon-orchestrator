@@ -12,7 +12,7 @@ import './App.css';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [sessionId] = useState(() => `session_${Math.random().toString(36).substr(2, 9)}`);
-
+  
   const { backendConnected } = useBackendConnection();
 
   const {
@@ -33,7 +33,8 @@ const App: React.FC = () => {
     setInputMessage,
     chatState,
     selectedAgent,
-    sendMessage
+    sendMessage,
+    stopStreaming
   } = useChat(sessionId, availableAgents);
 
   const handleApiKeyConfirm = () => {
@@ -66,6 +67,7 @@ const App: React.FC = () => {
             inputMessage={inputMessage}
             onInputChange={setInputMessage}
             onSendMessage={sendMessage}
+            onStopStreaming={stopStreaming}
             chatState={chatState}
             selectedAgent={selectedAgent}
             backendConnected={backendConnected}
