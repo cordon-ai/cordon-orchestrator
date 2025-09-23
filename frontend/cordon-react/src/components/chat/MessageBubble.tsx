@@ -45,13 +45,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, index }) => {
             remarkPlugins={[remarkGfm]}
             components={{
               // Custom styling for markdown elements
-              h1: ({children}) => <h1 className="text-xl font-bold mb-2 text-white">{children}</h1>,
-              h2: ({children}) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
-              h3: ({children}) => <h3 className="text-base font-bold mb-1 text-white">{children}</h3>,
-              p: ({children}) => <p className="mb-2 text-white">{children}</p>,
-              strong: ({children}) => <strong className="font-bold text-white">{children}</strong>,
-              em: ({children}) => <em className="italic text-white">{children}</em>,
-              code: ({children, className, ...props}) => {
+              h1: ({children}: any) => <h1 className="text-xl font-bold mb-2 text-white">{children}</h1>,
+              h2: ({children}: any) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
+              h3: ({children}: any) => <h3 className="text-base font-bold mb-1 text-white">{children}</h3>,
+              p: ({children}: any) => <p className="mb-2 text-white">{children}</p>,
+              strong: ({children}: any) => <strong className="font-bold text-white">{children}</strong>,
+              em: ({children}: any) => <em className="italic text-white">{children}</em>,
+              code: ({children, className, ...props}: any) => {
                 const match = /language-(\w+)/.exec(className || '');
                 const language = match ? match[1] : '';
                 const isInline = !className;
@@ -84,15 +84,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, index }) => {
                   </div>
                 );
               },
-              pre: ({children}) => {
+              pre: ({children}: any) => {
                 // The SyntaxHighlighter handles pre styling, so we just pass through
                 return <>{children}</>;
               },
-              ul: ({children}) => <ul className="list-disc list-inside mb-2 text-white">{children}</ul>,
-              ol: ({children}) => <ol className="list-decimal list-inside mb-2 text-white">{children}</ol>,
-              li: ({children}) => <li className="mb-1 text-white">{children}</li>,
-              blockquote: ({children}) => <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
-              a: ({children, href}) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+              ul: ({children}: any) => <ul className="list-disc list-inside mb-2 text-white">{children}</ul>,
+              ol: ({children}: any) => <ol className="list-decimal list-inside mb-2 text-white">{children}</ol>,
+              li: ({children}: any) => <li className="mb-1 text-white">{children}</li>,
+              blockquote: ({children}: any) => <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
+              a: ({children, href}: any) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
             }}
           >
             {message.content}

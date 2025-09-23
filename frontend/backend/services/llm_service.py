@@ -64,18 +64,15 @@ def generate_llm_response(
                     if 'message' in data and 'content' in data['message']:
                         content = data['message']['content']
                         if content:
-                            print(content, end='', flush=True)
                             full_content += content
                     elif data.get('done', False):
                         break
                 except json.JSONDecodeError:
                     continue
-
-        print()  # New line after streaming
         return full_content.strip()
 
     except Exception as e:
-        print(f"⚠️ Ollama not available, using mock response: {e}")
+        # Ollama not available, using mock response
         return _get_mock_response(prompt)
 
 

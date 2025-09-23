@@ -49,11 +49,7 @@ def create_app() -> FastAPI:
 
 def initialize_services():
     """Initialize all services"""
-    print("Initializing Cordon AI Backend...")
     agent_service.initialize_orchestrator()
-    print(f"🚀 Orchestrator initialized with {len(agent_service.orchestrator.agents)} agents")
-    if agent_service.orchestrator.supervisor:
-        print(f"🎯 Supervisor agent: {agent_service.orchestrator.supervisor.name}")
 
 
 # Create the app instance
