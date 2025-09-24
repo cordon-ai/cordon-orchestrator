@@ -18,19 +18,33 @@ body {
   font-weight: 300;
 }
 
-/* Cordon AI Brand Colors - Dark teal for high contrast */
+/* Cordon AI Design System - matching cordon-ai.github.io */
 :root {
-  --cordon-primary: #2d7a7a;
-  --cordon-secondary: #8b5cf6;
+  /* Color tokens */
+  --bg: #0b0f10;
+  --card: #0f1417;
+  --border: rgba(255, 255, 255, 0.12);
+  --muted: rgba(255, 255, 255, 0.6);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.9);
+  --text-muted: rgba(255, 255, 255, 0.6);
+
+  /* Accent colors */
+  --blue-400: #60a5fa;
+  --emerald-400: #34d399;
+
+  /* Legacy tokens for compatibility */
+  --cordon-primary: var(--blue-400);
+  --cordon-secondary: var(--emerald-400);
   --cordon-accent: #f59e0b;
-  --cordon-bg-dark: #000000;
-  --cordon-bg-card: #111111;
-  --cordon-bg-hover: #1a1a1a;
-  --cordon-text-primary: #ffffff;
-  --cordon-text-secondary: #a1a1aa;
-  --cordon-text-muted: #71717a;
-  --cordon-border: #27272a;
-  --cordon-border-hover: #3f3f46;
+  --cordon-bg-dark: var(--bg);
+  --cordon-bg-card: var(--card);
+  --cordon-bg-hover: rgba(255, 255, 255, 0.05);
+  --cordon-text-primary: var(--text-primary);
+  --cordon-text-secondary: var(--text-secondary);
+  --cordon-text-muted: var(--text-muted);
+  --cordon-border: var(--border);
+  --cordon-border-hover: rgba(255, 255, 255, 0.16);
 }
 
 /* Layout Classes */
@@ -430,6 +444,25 @@ body {
   overflow: hidden;
 }
 
+/* Task visualization styles */
+.task-node-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.task-connection-line {
+  stroke-dasharray: 5,5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
 /* Enhanced animations */
 @keyframes pulse {
   0%, 100% {
@@ -640,3 +673,182 @@ body {
 .group:hover .group-hover\\:scale-110 { transform: scale(1.1); }
 .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
 .duration-300 { transition-duration: 300ms; }
+
+/* Line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  font-family: inherit;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+  opacity: 0.8;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 8, 4;
+  animation: dashdraw 1s linear infinite;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  opacity: 1;
+  stroke-width: 3;
+}
+
+@keyframes dashdraw {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* React Flow node selection */
+.react-flow__node.selected .orchestrator-node {
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 1px var(--blue-400);
+}
+
+/* React Flow handle styles */
+.react-flow__handle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+}
+
+/* Hide React Flow attribution */
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Orchestrator canvas styles */
+.orchestrator-canvas {
+  background: var(--bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.orchestrator-canvas .react-flow__background {
+  background: var(--bg);
+}
+
+.orchestrator-canvas .react-flow__background-pattern {
+  opacity: 0.3;
+}
+
+.orchestrator-node {
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 1rem;
+  box-shadow: none;
+}
+
+.orchestrator-node:hover {
+  border-color: var(--cordon-border-hover);
+}
+
+/* React Flow controls styling */
+.react-flow__controls {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--cordon-bg-hover);
+  color: var(--text-secondary);
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+/* Minimap styling */
+.react-flow__minimap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+/* Bottom composer styles */
+.bottom-composer {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+}
+
+.composer-input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  resize: none;
+  min-height: 3rem;
+  max-height: 9rem;
+  padding: 0.75rem 3rem 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+}
+
+.composer-input:focus {
+  outline: none;
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.composer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.composer-send-button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--blue-400);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.composer-send-button:hover {
+  background: #3b82f6;
+}
+
+.composer-send-button:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Header styles */
+.orchestrator-header {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(10px);
+}

@@ -46,6 +46,86 @@ export const api = {
     });
   },
 
+  async sendMessageStreaming(
+    message: string,
+    sessionId: string,
+    userId: string,
+    onProgress: (update: any) => void,
+    onComplete: (response: string, agentName: string) => void,
+    onError: (error: Error) => void
+  ) {
+    console.log('Starting streaming request:', { message, sessionId, userId, baseUrl: BASE_URL });
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({
+          message,
+          session_id: sessionId,
+          user_id: userId
+        })
+      });
+
+      console.log('Response received:', response.status, response.statusText);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalResponse = '';
+      let finalAgent = 'Orchestrator';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            if (line === 'data: [DONE]') continue;
+
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                console.log('Received data:', data);
+
+                if (data.type === 'content') {
+                  finalResponse += data.content;
+                }
+
+                if (data.agent) {
+                  finalAgent = data.agent;
+                }
+
+                onProgress(data);
+              } catch (e) {
+                console.warn('Failed to parse SSE data:', line, e);
+              }
+            }
+          }
+        }
+      }
+
+      console.log('Streaming complete:', { finalResponse, finalAgent });
+      onComplete(finalResponse, finalAgent);
+    } catch (error) {
+      console.error('Streaming error:', error);
+      onError(error as Error);
+    }
+  },
+
   async getAgents(): Promise<Agent[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/agents`);

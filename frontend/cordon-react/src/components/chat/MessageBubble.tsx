@@ -41,62 +41,115 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, index }) => {
           </motion.div>
         )}
         <div className="streaming-text">
-          <ReactMarkdown 
-            remarkPlugins={[remarkGfm]}
-            components={{
-              // Custom styling for markdown elements
-              h1: ({children}: any) => <h1 className="text-xl font-bold mb-2 text-white">{children}</h1>,
-              h2: ({children}: any) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
-              h3: ({children}: any) => <h3 className="text-base font-bold mb-1 text-white">{children}</h3>,
-              p: ({children}: any) => <p className="mb-2 text-white">{children}</p>,
-              strong: ({children}: any) => <strong className="font-bold text-white">{children}</strong>,
-              em: ({children}: any) => <em className="italic text-white">{children}</em>,
-              code: ({children, className, ...props}: any) => {
-                const match = /language-(\w+)/.exec(className || '');
-                const language = match ? match[1] : '';
-                const isInline = !className;
-                
-                if (isInline) {
-                  return <code className="bg-gray-700 px-1 py-0.5 rounded text-sm text-green-400">{children}</code>;
+          {/* Enhanced terminal output detection and rendering */}
+          {message.content.includes('💻') || message.content.includes('📤') || message.content.includes('📊') ? (
+            <div className="space-y-2">
+              {message.content.split('\n').map((line, lineIndex) => {
+                const isTerminalCommand = line.trim().startsWith('💻');
+                const isTerminalOutput = line.trim().startsWith('📤');
+                const isTerminalResult = line.trim().startsWith('📊');
+                const isTaskUpdate = /^(📋|✅|❌|🔄|🧠|🤔)/.test(line.trim());
+
+                if (isTerminalCommand) {
+                  return (
+                    <div key={lineIndex} className="bg-gray-900 border border-gray-600 rounded-md p-3 font-mono text-sm">
+                      <div className="text-green-400 mb-1">Terminal Command:</div>
+                      <div className="text-yellow-300">{line.replace('💻', '').trim()}</div>
+                    </div>
+                  );
+                } else if (isTerminalOutput) {
+                  return (
+                    <div key={lineIndex} className="bg-gray-800 border-l-4 border-blue-500 pl-3 py-2 font-mono text-sm">
+                      <div className="text-gray-300">{line.replace('📤', '').trim()}</div>
+                    </div>
+                  );
+                } else if (isTerminalResult) {
+                  return (
+                    <div key={lineIndex} className="bg-gray-800 border-l-4 border-purple-500 pl-3 py-2 font-mono text-sm">
+                      <div className="text-purple-300">{line.replace('📊', '').trim()}</div>
+                    </div>
+                  );
+                } else if (isTaskUpdate) {
+                  return (
+                    <div key={lineIndex} className="bg-blue-900/20 border border-blue-600 rounded-md p-2 text-sm">
+                      <div className="text-blue-300">{line.trim()}</div>
+                    </div>
+                  );
+                } else if (line.trim()) {
+                  return (
+                    <div key={lineIndex} className="text-white">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({children}: any) => <span className="text-white">{children}</span>,
+                        }}
+                      >
+                        {line}
+                      </ReactMarkdown>
+                    </div>
+                  );
                 }
-                
-                return (
-                  <div className="my-4 rounded-lg overflow-hidden border border-gray-600">
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={language || 'text'}
-                      PreTag="div"
-                      customStyle={{
-                        margin: 0,
-                        padding: '1rem',
-                        backgroundColor: '#1e1e1e',
-                        fontSize: '0.875rem',
-                        lineHeight: '1.5',
-                      }}
-                      codeTagProps={{
-                        style: {
-                          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                        }
-                      }}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  </div>
-                );
-              },
-              pre: ({children}: any) => {
-                // The SyntaxHighlighter handles pre styling, so we just pass through
-                return <>{children}</>;
-              },
-              ul: ({children}: any) => <ul className="list-disc list-inside mb-2 text-white">{children}</ul>,
-              ol: ({children}: any) => <ol className="list-decimal list-inside mb-2 text-white">{children}</ol>,
-              li: ({children}: any) => <li className="mb-1 text-white">{children}</li>,
-              blockquote: ({children}: any) => <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
-              a: ({children, href}: any) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
+                return <div key={lineIndex} className="h-1" />;
+              })}
+            </div>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // Custom styling for markdown elements
+                h1: ({children}: any) => <h1 className="text-xl font-bold mb-2 text-white">{children}</h1>,
+                h2: ({children}: any) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
+                h3: ({children}: any) => <h3 className="text-base font-bold mb-1 text-white">{children}</h3>,
+                p: ({children}: any) => <p className="mb-2 text-white">{children}</p>,
+                strong: ({children}: any) => <strong className="font-bold text-white">{children}</strong>,
+                em: ({children}: any) => <em className="italic text-white">{children}</em>,
+                code: ({children, className, ...props}: any) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const language = match ? match[1] : '';
+                  const isInline = !className;
+
+                  if (isInline) {
+                    return <code className="bg-gray-700 px-1 py-0.5 rounded text-sm text-green-400">{children}</code>;
+                  }
+
+                  return (
+                    <div className="my-4 rounded-lg overflow-hidden border border-gray-600">
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={language || 'text'}
+                        PreTag="div"
+                        customStyle={{
+                          margin: 0,
+                          padding: '1rem',
+                          backgroundColor: '#1e1e1e',
+                          fontSize: '0.875rem',
+                          lineHeight: '1.5',
+                        }}
+                        codeTagProps={{
+                          style: {
+                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                          }
+                        }}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    </div>
+                  );
+                },
+                pre: ({children}: any) => {
+                  // The SyntaxHighlighter handles pre styling, so we just pass through
+                  return <>{children}</>;
+                },
+                ul: ({children}: any) => <ul className="list-disc list-inside mb-2 text-white">{children}</ul>,
+                ol: ({children}: any) => <ol className="list-decimal list-inside mb-2 text-white">{children}</ol>,
+                li: ({children}: any) => <li className="mb-1 text-white">{children}</li>,
+                blockquote: ({children}: any) => <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
+                a: ({children, href}: any) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
           {message.isStreaming && (
             <span className="cursor-blink" />
           )}

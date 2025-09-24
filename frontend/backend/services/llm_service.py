@@ -1,7 +1,8 @@
 import os
 import json
 import requests
-from typing import List, Dict, Any, Optional
+import asyncio
+from typing import List, Dict, Any, Optional, AsyncGenerator
 
 
 def _to_messages(system: Optional[str], chat_history: List[Dict], prompt: str) -> List[Dict[str, str]]:
@@ -74,6 +75,61 @@ def generate_llm_response(
     except Exception as e:
         # Ollama not available, using mock response
         return _get_mock_response(prompt)
+
+
+async def generate_llm_response_streaming(
+    prompt: str,
+    system: Optional[str] = None,
+    user_id: str = "default_user",
+    session_id: str = "default_session",
+    chat_history: Optional[List[Dict]] = None,
+    params: Optional[Dict[str, Any]] = None
+) -> AsyncGenerator[str, None]:
+    """Streaming LLM generation function with Ollama integration"""
+    
+    try:
+        # Configuration
+        model = os.getenv("LLAMA_MODEL", "llama3.1:8b")
+        url = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat")
+
+        temperature = (params or {}).get("temperature", 0.2)
+        max_tokens = (params or {}).get("max_tokens", 512)
+
+        payload = {
+            "model": model,
+            "messages": _to_messages(system, chat_history or [], prompt),
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens
+            },
+        }
+
+        # Stream the response
+        response = requests.post(url, json=payload, stream=True, timeout=600)
+        response.raise_for_status()
+
+        for line in response.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line.decode('utf-8'))
+                    if 'message' in data and 'content' in data['message']:
+                        content = data['message']['content']
+                        if content:
+                            yield content
+                    elif data.get('done', False):
+                        break
+                except json.JSONDecodeError:
+                    continue
+
+    except Exception as e:
+        # Ollama not available, yield mock response
+        mock_response = _get_mock_response(prompt)
+        # Simulate streaming by yielding chunks
+        words = mock_response.split()
+        for word in words:
+            yield word + " "
+            await asyncio.sleep(0.05)  # Small delay for streaming effect
 
 
 def _get_mock_response(prompt: str) -> str:

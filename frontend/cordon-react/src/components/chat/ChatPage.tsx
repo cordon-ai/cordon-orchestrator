@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Message, Agent, ChatState } from '../../types';
 import ChatHeader from './ChatHeader';
 import ChatInput from './ChatInput';
@@ -17,6 +17,8 @@ interface ChatPageProps {
   selectedAgent: Agent | null;
   backendConnected: boolean;
   sessionId: string;
+  onShowTaskVisualization?: () => void;
+  hasTasks?: boolean;
 }
 
 const ChatPage: React.FC<ChatPageProps> = ({
@@ -28,7 +30,9 @@ const ChatPage: React.FC<ChatPageProps> = ({
   chatState,
   selectedAgent,
   backendConnected,
-  sessionId
+  sessionId,
+  onShowTaskVisualization,
+  hasTasks
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +103,12 @@ const ChatPage: React.FC<ChatPageProps> = ({
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <ChatHeader backendConnected={backendConnected} sessionId={sessionId} />
+      <ChatHeader 
+        backendConnected={backendConnected} 
+        sessionId={sessionId}
+        onShowTaskVisualization={onShowTaskVisualization}
+        hasTasks={hasTasks}
+      />
 
       {/* Messages Area */}
       <div 

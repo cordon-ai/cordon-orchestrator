@@ -22,11 +22,11 @@ class AgentService:
     def initialize_orchestrator(self):
         """Initialize the orchestrator with default configuration"""
         self.orchestrator = AgentTeam(options=AgentTeamConfig(
-            LOG_AGENT_CHAT=True,
-            LOG_CLASSIFIER_CHAT=True,
-            LOG_CLASSIFIER_RAW_OUTPUT=True,
-            LOG_CLASSIFIER_OUTPUT=True,
-            LOG_EXECUTION_TIMES=True,
+            LOG_AGENT_CHAT=False,  # Disable logging to reduce terminal output
+            LOG_CLASSIFIER_CHAT=False,
+            LOG_CLASSIFIER_RAW_OUTPUT=False,
+            LOG_CLASSIFIER_OUTPUT=False,
+            LOG_EXECUTION_TIMES=False,
             MAX_RETRIES=3,
             USE_DEFAULT_AGENT_IF_NONE_IDENTIFIED=True,
             MAX_MESSAGE_PAIRS_PER_AGENT=10
@@ -55,6 +55,14 @@ class AgentService:
         ))
         self.orchestrator.add_agent(coder)
 
+        # Command Executor agent
+        command_executor = GenericLLMAgent(GenericLLMAgentOptions(
+            name="CommandExecutor",
+            description="Executes terminal commands and provides command-line assistance",
+            generate=generate_llm_response,
+        ))
+        self.orchestrator.add_agent(command_executor)
+
         # Supervisor agent for classification
         supervisor = GenericLLMAgent(GenericLLMAgentOptions(
             name="Supervisor",
@@ -63,28 +71,33 @@ class AgentService:
         ))
 
         # Set system prompt for the supervisor
-        supervisor_prompt = """You are a supervisor agent that classifies user requests and routes them to the appropriate specialist agent.
+        supervisor_prompt = """You are a supervisor agent that handles task splitting and agent assignment.
 
-Your job is to analyze the user's request and respond with ONLY the name of the most appropriate agent: "Researcher" or "Coder".
+CRITICAL: You must respond with ONLY valid JSON. No other text, explanations, or formatting.
+
+When given a user request, split it into individual tasks and assign each task to the most appropriate agent.
+
+Available agents:
+- Researcher: Answers research questions and provides analysis
+- Coder: Writes code like a seasoned developer  
+- CommandExecutor: Executes terminal commands and provides command-line assistance
+
+For simple requests, return a single task. For complex requests, split into multiple tasks.
+
+RESPOND WITH ONLY THIS EXACT FORMAT (no other text):
+[
+  {
+    "description": "Task description here",
+    "assigned_agent": "AgentName",
+    "priority": 0
+  }
+]
 
 Examples:
-- "I need help with Python programming" -> "Coder"
-- "Can you research the latest AI trends?" -> "Researcher"
-- "Can you help me do my taxes" -> "Accountant"
-- "Find information about climate change" -> "Researcher"
-- "Find information about the weather" -> "Weather"
-- "Can you help me with my car insurance" -> "Insurance"
-- "Can you help me with my mortgage" -> "Financial Advisor"
-- "Can you help me with my student loans" -> "Financial Advisor"
-- "Can you help me with my credit card debt" -> "Financial Advisor"
-- "Can you help me with my finances" -> "Financial Advisor"
-- "Debug my JavaScript code" -> "Coder"
-- "Analyze market trends" -> "Researcher"
+- "Research AI trends" → [{"description": "Research AI trends", "assigned_agent": "Researcher", "priority": 0}]
+- "Write a Python script and test it" → [{"description": "Write a Python script", "assigned_agent": "Coder", "priority": 0}, {"description": "Test the script", "assigned_agent": "CommandExecutor", "priority": 1}]
 
-Respond with only the agent name, nothing else.
-
-Available agents and their descriptions:
-""" + "\n".join([f"- {agent.name}: {agent.description}" for agent in self.orchestrator.agents])
+REMEMBER: Only return the JSON array, nothing else. No explanations, no markdown, no additional text."""
 
         supervisor.set_system_prompt(supervisor_prompt)
         self.orchestrator.add_supervisor(supervisor)
@@ -94,6 +107,7 @@ Available agents and their descriptions:
         capabilities_map = {
             "Researcher": ["Research", "Analysis", "Data gathering", "Fact checking"],
             "Coder": ["Programming", "Code review", "Debugging", "Software development"],
+            "CommandExecutor": ["Terminal commands", "System administration", "File operations", "Process management"],
             "Supervisor": ["Classification", "Routing", "Coordination", "Management"],
             "Writer": ["Content creation", "Editing", "Proofreading", "Creative writing"],
             "Data Analyst": ["Data analysis", "Statistics", "Visualization", "Reporting"],
@@ -285,12 +299,12 @@ Available agents and their descriptions:
 
         raise ValueError("Agent not found")
 
-    async def route_request(self, message: str, user_id: str, session_id: str):
+    async def route_request(self, message: str, user_id: str, session_id: str, progress_callback=None):
         """Route request through the orchestrator"""
         if not self.orchestrator:
             raise ValueError("Orchestrator not initialized")
 
-        return await self.orchestrator.route_request(message, user_id, session_id)
+        return await self.orchestrator.route_request(message, user_id, session_id, progress_callback)
 
 
 # Global instance

@@ -1,12 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Brain } from 'lucide-react';
 
 interface ChatHeaderProps {
   backendConnected: boolean;
   sessionId: string;
+  onShowTaskVisualization?: () => void;
+  hasTasks?: boolean;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ backendConnected, sessionId }) => {
+const ChatHeader: React.FC<ChatHeaderProps> = ({ 
+  backendConnected, 
+  sessionId, 
+  onShowTaskVisualization, 
+  hasTasks 
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -23,6 +31,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ backendConnected, sessionId }) 
           </p>
         </div>
         <div className="flex items-center gap-4">
+          {hasTasks && onShowTaskVisualization && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onShowTaskVisualization}
+              className="flex items-center gap-2 px-3 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors"
+            >
+              <Brain className="w-4 h-4" />
+              <span className="text-sm font-medium">View Tasks</span>
+            </motion.button>
+          )}
           <div className="status-indicator">
             <div className={`status-dot ${backendConnected ? 'online' : 'offline'}`} />
             <span className="text-xs">

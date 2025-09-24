@@ -1,3 +1,14 @@
+export interface Task {
+  id: string;
+  description: string;
+  assigned_agent: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  priority: number;
+  output?: string;
+  error?: string;
+  progress?: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -5,6 +16,8 @@ export interface Message {
   timestamp: Date;
   agentName: string | null;
   isStreaming?: boolean;
+  tasks?: Task[];
+  currentTaskId?: string;
 }
 
 export interface Agent {

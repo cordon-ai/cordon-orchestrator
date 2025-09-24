@@ -18,18 +18,31 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # Create streaming callback that yields chunks
         async def stream_generator():
-            # Stage 1: Supervisor thinking indicator
-            yield f"data: {{\"type\": \"thinking\", \"message\": \"Supervisor analyzing request...\"}}\n\n"
-            await asyncio.sleep(0.5)
+            progress_messages = []
 
-            # Stage 2: Route through orchestrator to get agent selection
+            # Progress callback to capture orchestrator updates
+            async def progress_callback(update):
+                nonlocal progress_messages
+                progress_messages.append(update)
+
+            # Stage 1: Initial setup
+            yield f"data: {{\"type\": \"thinking\", \"message\": \"🔄 Starting task orchestration...\"}}\n\n"
+            await asyncio.sleep(0.2)
+
+            # Stage 2: Route through orchestrator to get task-based response
             response = await agent_service.route_request(
                 request.message,
                 request.user_id,
-                request.session_id
+                request.session_id,
+                progress_callback
             )
 
-            # Extract agent name and initial response
+            # Stream all the progress messages that were collected
+            for update in progress_messages:
+                yield f"data: {json.dumps(update)}\n\n"
+                await asyncio.sleep(0.1)
+
+            # Extract response information
             if hasattr(response, 'metadata'):
                 agent_name = response.metadata.agent_name
                 if hasattr(response.output, 'content'):
@@ -37,59 +50,33 @@ async def chat_endpoint(request: ChatRequest):
                 else:
                     response_text = str(response.output)
             else:
-                agent_name = "Unknown"
+                agent_name = "Orchestrator"
                 response_text = str(response)
 
-            # Stage 3: Agent selected indicator
-            yield f"data: {{\"type\": \"agent_selected\", \"agent\": \"{agent_name}\"}}\n\n"
+            # Stage 3: Final response indicator
+            yield f"data: {{\"type\": \"response_start\", \"agent\": \"{agent_name}\"}}\n\n"
             await asyncio.sleep(0.3)
-            # Stage 4: Start
-            yield sse({"type": "response_start", "agent": agent_name})
 
-            # Tokenize preserving ALL whitespace (spaces, tabs, newlines)
-            # Matches either a run of whitespace (\s+) or a run of non-whitespace (\S+)
-            for m in re.finditer(r"\s+|\S+", response_text):
-                chunk = m.group(0)
-                # Send the chunk exactly as-is; the client should concatenate in order
+            # Stream the response word by word
+            words = response_text.split()
+            for i, word in enumerate(words):
+                chunk = word + (" " if i < len(words) - 1 else "")
                 yield sse({"type": "content", "content": chunk})
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.04)
 
-            # Stage 5: Complete
+            # Stage 4: Complete
             yield sse({"type": "complete", "agent": agent_name})
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
                 stream_generator(),
-                media_type="text/event-stream",  # correct SSE content type
+                media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
-                    "X-Accel-Buffering": "no",   # helpful with some proxies
+                    "X-Accel-Buffering": "no",
                 },
         )
-        #     # Stage 4: Start streaming the actual response
-        #     yield f"data: {{\"type\": \"response_start\", \"agent\": \"{agent_name}\"}}\n\n"
-
-        #     # Stream the response word by word for better UX
-        #     words = response_text.split()
-        #     for i, word in enumerate(words):
-        #         chunk = word + (" " if i < len(words) - 1 else "")
-        #         yield f"data: {{\"type\": \"content\", \"content\": \"{chunk}\"}}\n\n"
-        #         await asyncio.sleep(0.05)  # Small delay for streaming effect
-
-        #     # Stage 5: Final completion
-        #     yield f"data: {{\"type\": \"complete\", \"agent\": \"{agent_name}\"}}\n\n"
-        #     yield "data: [DONE]\n\n"
-
-        # return StreamingResponse(
-        #     stream_generator(),
-        #     media_type="text/plain",
-        #     headers={
-        #         "Cache-Control": "no-cache",
-        #         "Connection": "keep-alive",
-        #         "Content-Type": "text/event-stream",
-        #     }
-        # )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")

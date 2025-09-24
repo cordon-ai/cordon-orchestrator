@@ -4,9 +4,11 @@ import { useChat } from './hooks/useChat';
 import { useAgents } from './hooks/useAgents';
 import { useBackendConnection } from './hooks/useBackendConnection';
 import Sidebar from './components/ui/Sidebar';
-import ChatPage from './components/chat/ChatPage';
+import OrchestratorCanvas from './components/orchestrator/OrchestratorCanvas';
 import MarketplacePage from './components/marketplace/MarketplacePage';
 import AgentsPage from './components/agents/AgentsPage';
+import TaskVisualization from './components/chat/TaskVisualization';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 const App: React.FC = () => {
@@ -29,12 +31,12 @@ const App: React.FC = () => {
 
   const {
     messages,
-    inputMessage,
-    setInputMessage,
     chatState,
-    selectedAgent,
     sendMessage,
-    stopStreaming
+    showTaskVisualization,
+    setShowTaskVisualization,
+    currentTasks,
+    currentTaskId
   } = useChat(sessionId, availableAgents);
 
   const handleApiKeyConfirm = () => {
@@ -62,17 +64,16 @@ const App: React.FC = () => {
 
       <div className="flex-1 main-content">
         {currentPage === 'chat' && (
-          <ChatPage
-            messages={messages}
-            inputMessage={inputMessage}
-            onInputChange={setInputMessage}
-            onSendMessage={sendMessage}
-            onStopStreaming={stopStreaming}
-            chatState={chatState}
-            selectedAgent={selectedAgent}
-            backendConnected={backendConnected}
-            sessionId={sessionId}
-          />
+          <ErrorBoundary>
+            <OrchestratorCanvas
+              onSendMessage={sendMessage}
+              isStreaming={chatState === 'responding'}
+              backendConnected={backendConnected}
+              currentTasks={currentTasks}
+              currentTaskId={currentTaskId}
+              messages={messages}
+            />
+          </ErrorBoundary>
         )}
 
         {currentPage === 'marketplace' && (
@@ -100,6 +101,15 @@ const App: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Task Visualization Popup */}
+      <TaskVisualization
+        isOpen={showTaskVisualization}
+        onClose={() => setShowTaskVisualization(false)}
+        originalPrompt={messages.filter(m => m.role === 'user').pop()?.content || 'Processing request...'}
+        tasks={currentTasks}
+        currentTaskId={currentTaskId}
+      />
     </div>
   );
 };
