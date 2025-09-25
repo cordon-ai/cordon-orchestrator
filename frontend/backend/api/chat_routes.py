@@ -18,16 +18,14 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # Create streaming callback that yields chunks
         async def stream_generator():
-            progress_messages = []
+            progress_updates = []
 
-            # Progress callback to capture orchestrator updates
-            async def progress_callback(update):
-                nonlocal progress_messages
-                progress_messages.append(update)
+            # Progress callback to collect updates
+            def progress_callback(update):
+                progress_updates.append(update)
 
             # Stage 1: Initial setup
-            yield f"data: {{\"type\": \"thinking\", \"message\": \"🔄 Starting task orchestration...\"}}\n\n"
-            await asyncio.sleep(0.2)
+            yield sse({"type": "thinking", "message": "🔄 Starting task orchestration..."})
 
             # Stage 2: Route through orchestrator to get task-based response
             response = await agent_service.route_request(
@@ -37,10 +35,10 @@ async def chat_endpoint(request: ChatRequest):
                 progress_callback
             )
 
-            # Stream all the progress messages that were collected
-            for update in progress_messages:
-                yield f"data: {json.dumps(update)}\n\n"
-                await asyncio.sleep(0.1)
+            # Stream all collected progress updates
+            for update in progress_updates:
+                yield sse(update)
+                await asyncio.sleep(0.02)  # Faster streaming
 
             # Extract response information
             if hasattr(response, 'metadata'):
@@ -55,14 +53,26 @@ async def chat_endpoint(request: ChatRequest):
 
             # Stage 3: Final response indicator
             yield f"data: {{\"type\": \"response_start\", \"agent\": \"{agent_name}\"}}\n\n"
-            await asyncio.sleep(0.3)
 
-            # Stream the response word by word
-            words = response_text.split()
-            for i, word in enumerate(words):
-                chunk = word + (" " if i < len(words) - 1 else "")
-                yield sse({"type": "content", "content": chunk})
-                await asyncio.sleep(0.04)
+            # Stream the response in optimized chunks for better performance
+            if response_text:
+                # Smart chunking - balance between readability and performance
+                chunk_size = 50  # characters per chunk
+                words = response_text.split()
+                current_chunk = ""
+
+                for word in words:
+                    if len(current_chunk + " " + word) > chunk_size and current_chunk:
+                        # Send current chunk
+                        yield sse({"type": "content", "content": current_chunk + " "})
+                        await asyncio.sleep(0.01)  # Much faster streaming
+                        current_chunk = word
+                    else:
+                        current_chunk += (" " + word if current_chunk else word)
+
+                # Send remaining chunk
+                if current_chunk:
+                    yield sse({"type": "content", "content": current_chunk})
 
             # Stage 4: Complete
             yield sse({"type": "complete", "agent": agent_name})

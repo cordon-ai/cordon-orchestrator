@@ -99,16 +99,14 @@ export const api = {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                console.log('Received data:', data);
-
+                // More efficient data handling
                 if (data.type === 'content') {
                   finalResponse += data.content;
-                }
-
-                if (data.agent) {
+                } else if (data.agent) {
                   finalAgent = data.agent;
                 }
 
+                // Batch progress updates for better performance
                 onProgress(data);
               } catch (e) {
                 console.warn('Failed to parse SSE data:', line, e);

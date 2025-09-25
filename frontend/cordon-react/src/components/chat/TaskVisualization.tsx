@@ -165,8 +165,8 @@ const TaskVisualization: React.FC<TaskVisualizationProps> = ({
                 {/* Task Nodes */}
                 <div className="relative z-10 h-full">
                   {tasks.map((task, index) => {
-                    const IconComponent = getAgentIcon(task.assigned_agent);
-                    const colorStyle = getAgentColorStyle(task.assigned_agent);
+                    const IconComponent = getAgentIcon(task.assigned_agent || 'Unknown');
+                    const colorStyle = getAgentColorStyle(task.assigned_agent || 'Unknown');
                     const isCurrentTask = task.id === currentTaskId;
 
                     const x = (index % 3) * 280;

@@ -79,7 +79,10 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
   };
 
   const handleProgressUpdate = (messageId: string, update: any) => {
-    console.log('Progress update received:', update);
+    // Enhanced progress handling with detailed logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Enhanced progress update:', update.type, update.message?.substring(0, 100) || '', update);
+    }
 
     switch (update.type) {
       case 'thinking':
@@ -87,7 +90,12 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         setChatState('selecting');
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: update.message || '🧠 Processing...', isStreaming: true }
+            ? {
+                ...msg,
+                content: update.message || '🧠 Processing...',
+                isStreaming: true,
+                thinkingPhase: 'analyzing'
+              }
             : msg
         ));
         break;
@@ -104,16 +112,35 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         setShowTaskVisualization(true);
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: `📋 Created ${tasks.length} task${tasks.length > 1 ? 's' : ''}`, tasks, isStreaming: true }
+            ? {
+                ...msg,
+                content: `📋 Created ${tasks.length} task${tasks.length > 1 ? 's' : ''}: ${tasks.map((t: Task) => `${t.assigned_agent} → ${t.description.substring(0, 30)}...`).join(', ')}`,
+                tasks,
+                isStreaming: true,
+                thinkingPhase: 'task_creation'
+              }
             : msg
         ));
         break;
 
       case 'task_assigned':
       case 'task_reassigned':
+        // Update task assignments in real-time
+        if (update.task_id && update.agent) {
+          setCurrentTasks(prev => prev.map(task =>
+            task.id === update.task_id
+              ? { ...task, assigned_agent: update.agent, status: 'pending' }
+              : task
+          ));
+        }
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: update.message, isStreaming: true }
+            ? {
+                ...msg,
+                content: msg.content + '\n' + update.message,
+                isStreaming: true,
+                thinkingPhase: 'task_assignment'
+              }
             : msg
         ));
         break;
@@ -122,11 +149,19 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         setChatState('responding');
         setCurrentTaskId(update.task_id);
         setCurrentTasks(prev => prev.map(task =>
-          task.id === update.task_id ? { ...task, status: 'running' } : task
+          task.id === update.task_id
+            ? { ...task, status: 'running', started_at: new Date().toISOString() }
+            : task
         ));
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: update.message, currentTaskId: update.task_id, isStreaming: true }
+            ? {
+                ...msg,
+                content: msg.content + '\n' + update.message,
+                currentTaskId: update.task_id,
+                isStreaming: true,
+                thinkingPhase: 'execution'
+              }
             : msg
         ));
         break;
@@ -157,24 +192,52 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
       case 'agent_processing':
         const agent = availableAgents.find(a => a.name === update.agent);
         setSelectedAgent(agent || null);
+        // Update the specific task being processed
+        if (update.task_id) {
+          setCurrentTasks(prev => prev.map(task =>
+            task.id === update.task_id
+              ? {
+                  ...task,
+                  status: 'running',
+                  processing_agent: update.agent,
+                  processing_started: new Date().toISOString()
+                }
+              : task
+          ));
+        }
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: update.message, agentName: update.agent, isStreaming: true }
+            ? {
+                ...msg,
+                content: msg.content + '\n' + update.message,
+                agentName: update.agent,
+                isStreaming: true,
+                activeAgent: update.agent
+              }
             : msg
         ));
         break;
 
       case 'task_completed':
+        console.log('Enhanced task completed update:', update);
         setCurrentTasks(prev => prev.map(task =>
-          task.id === update.task_id ? { 
-            ...task, 
+          task.id === update.task_id ? {
+            ...task,
             status: 'completed',
-            output: update.output || task.output || 'Task completed successfully'
+            output: update.output || task.output || 'Task completed successfully',
+            completed_at: new Date().toISOString(),
+            duration: task.started_at ?
+              Math.round((new Date().getTime() - new Date(task.started_at).getTime()) / 1000) : undefined
           } : task
         ));
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
-            ? { ...msg, content: msg.content + `\n${update.message}`, isStreaming: true }
+            ? {
+                ...msg,
+                content: msg.content + `\n${update.message}`,
+                isStreaming: true,
+                completedTasks: (msg.completedTasks || 0) + 1
+              }
             : msg
         ));
         break;

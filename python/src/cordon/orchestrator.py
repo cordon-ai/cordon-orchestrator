@@ -77,7 +77,7 @@ class AgentTeam:
     async def split_input_into_tasks(self, user_input: str, progress_callback=None) -> List[Task]:
         """Split user input into individual tasks using supervisor agent with NLP."""
         if progress_callback:
-            await progress_callback({"type": "task_splitting", "message": "🧠 Supervisor analyzing request and breaking into tasks..."})
+            progress_callback({"type": "task_splitting", "message": "🧠 Supervisor analyzing request and breaking into tasks..."})
 
         if not self.supervisor:
             # Fallback to simple splitting if no supervisor
@@ -87,9 +87,6 @@ class AgentTeam:
             # Create the NLP prompt for task splitting
             agent_descriptions = self._get_agent_descriptions()
             nlp_prompt = self._create_task_splitting_prompt(agent_descriptions, user_input)
-
-            if progress_callback:
-                await progress_callback({"type": "task_splitting", "message": "🤔 Supervisor thinking..."})
 
             # Get response from supervisor agent
             chat_history = []
@@ -112,14 +109,14 @@ class AgentTeam:
             tasks = self._parse_supervisor_response(response, user_input)
 
             if progress_callback:
-                await progress_callback({"type": "tasks_created", "tasks": [{"id": t.id, "description": t.description, "assigned_agent": t.assigned_agent, "status": t.status.value} for t in tasks]})
+                progress_callback({"type": "tasks_created", "tasks": [{"id": t.id, "description": t.description, "assigned_agent": t.assigned_agent, "status": t.status.value} for t in tasks]})
 
             return tasks
 
         except Exception as e:
             print(f"⚠️ NLP task splitting failed: {str(e)}, falling back to simple splitting")
             if progress_callback:
-                await progress_callback({"type": "task_splitting_error", "message": f"⚠️ Using fallback task splitting: {str(e)}"})
+                progress_callback({"type": "task_splitting_error", "message": f"⚠️ Using fallback task splitting: {str(e)}"})
             return self._simple_task_splitting(user_input)
     
     def _get_agent_descriptions(self) -> str:
@@ -239,7 +236,7 @@ Only return the JSON array, no other text."""
                     self.agent_task_assignments[agent_name].add(task.id)
                     print(f"📋 Task assigned by supervisor: '{task.description[:50]}...' → {agent_name}")
                     if progress_callback:
-                        await progress_callback({"type": "task_assigned", "task_id": task.id, "agent": agent_name, "message": f"📋 {agent_name} assigned: {task.description[:50]}..."})
+                        progress_callback({"type": "task_assigned", "task_id": task.id, "agent": agent_name, "message": f"📋 {agent_name} assigned: {task.description[:50]}..."})
                 else:
                     print(f"⚠️ Supervisor assigned unknown agent '{agent_name}' for task: {task.description}")
                     # Fallback to finding best agent
@@ -249,7 +246,7 @@ Only return the JSON array, no other text."""
                         self.agent_task_assignments[best_agent.name].add(task.id)
                         print(f"📋 Fallback assignment: '{task.description[:50]}...' → {best_agent.name}")
                         if progress_callback:
-                            await progress_callback({"type": "task_reassigned", "task_id": task.id, "original_agent": agent_name, "new_agent": best_agent.name, "message": f"📋 Reassigned to {best_agent.name}: {task.description[:50]}..."})
+                            progress_callback({"type": "task_reassigned", "task_id": task.id, "original_agent": agent_name, "new_agent": best_agent.name, "message": f"📋 Reassigned to {best_agent.name}: {task.description[:50]}..."})
             else:
                 # No agent assigned, find the best one
                 best_agent = self._find_best_agent_for_task(task)
@@ -258,11 +255,11 @@ Only return the JSON array, no other text."""
                     self.agent_task_assignments[best_agent.name].add(task.id)
                     print(f"📋 Auto-assigned task: '{task.description[:50]}...' → {best_agent.name}")
                     if progress_callback:
-                        await progress_callback({"type": "task_assigned", "task_id": task.id, "agent": best_agent.name, "message": f"📋 {best_agent.name} assigned: {task.description[:50]}..."})
+                        progress_callback({"type": "task_assigned", "task_id": task.id, "agent": best_agent.name, "message": f"📋 {best_agent.name} assigned: {task.description[:50]}..."})
                 else:
                     print(f"⚠️ No suitable agent found for task: {task.description}")
                     if progress_callback:
-                        await progress_callback({"type": "task_assignment_failed", "task_id": task.id, "message": f"⚠️ No suitable agent found for: {task.description[:50]}..."})
+                        progress_callback({"type": "task_assignment_failed", "task_id": task.id, "message": f"⚠️ No suitable agent found for: {task.description[:50]}..."})
     
     def _find_best_agent_for_task(self, task: Task) -> Optional[Agent]:
         """Find the best agent for a given task."""
@@ -304,16 +301,16 @@ Only return the JSON array, no other text."""
         for i, task in enumerate(tasks):
             print(f"🔄 Executing task: {task.description[:50]}...")
             if progress_callback:
-                await progress_callback({"type": "task_started", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"🔄 Starting: {task.description[:50]}..."})
+                progress_callback({"type": "task_started", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"🔄 Starting: {task.description[:50]}..."})
 
             result = await self._execute_single_task(task, progress_callback)
             results.append(result)
 
             if progress_callback:
                 if result.success:
-                    await progress_callback({"type": "task_completed", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"✅ Completed: {task.description[:50]}..."})
+                    progress_callback({"type": "task_completed", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"✅ Completed: {task.description[:50]}...", "output": result.output})
                 else:
-                    await progress_callback({"type": "task_failed", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"❌ Failed: {task.description[:50]}...", "error": result.error})
+                    progress_callback({"type": "task_failed", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"❌ Failed: {task.description[:50]}...", "error": result.error})
 
             # If task failed, we can choose to continue or stop
             if not result.success:
@@ -348,17 +345,17 @@ Only return the JSON array, no other text."""
                 command = self._extract_command_from_task(task)
                 if command:
                     if progress_callback:
-                        await progress_callback({"type": "command_execution", "task_id": task.id, "command": command, "message": f"💻 Executing command: {command}"})
+                        progress_callback({"type": "command_execution", "task_id": task.id, "command": command, "message": f"💻 Executing command: {command}"})
                     result = await self.execute_command(command, progress_callback=progress_callback)
                     output = result
                 else:
                     output = "No command found in task"
                     if progress_callback:
-                        await progress_callback({"type": "command_error", "task_id": task.id, "message": "❌ No command found in task"})
+                        progress_callback({"type": "command_error", "task_id": task.id, "message": "❌ No command found in task"})
             else:
                 # Handle regular agent tasks
                 if progress_callback:
-                    await progress_callback({"type": "agent_processing", "task_id": task.id, "agent": agent.name, "message": f"🤖 {agent.name} processing task..."})
+                    progress_callback({"type": "agent_processing", "task_id": task.id, "agent": agent.name, "message": f"🤖 {agent.name} processing task..."})
                 chat_history = []
                 response = await agent.process_request(
                     task.description,
@@ -479,7 +476,7 @@ Only return the JSON array, no other text."""
 
             print(f"🖥️  Executing terminal command: {command}")
             if progress_callback:
-                await progress_callback({"type": "terminal_output", "message": f"🖥️  $ {command}", "level": "command"})
+                progress_callback({"type": "terminal_output", "message": f"🖥️  $ {command}", "level": "command"})
 
             # Execute the command with timeout
             process = await asyncio.create_subprocess_exec(
@@ -507,10 +504,10 @@ Only return the JSON array, no other text."""
                 # Send progress updates with terminal output
                 if progress_callback:
                     if stdout_text:
-                        await progress_callback({"type": "terminal_output", "message": f"📤 {stdout_text[:200]}{'...' if len(stdout_text) > 200 else ''}", "level": "stdout"})
+                        progress_callback({"type": "terminal_output", "message": f"📤 {stdout_text[:200]}{'...' if len(stdout_text) > 200 else ''}", "level": "stdout"})
                     if stderr_text:
-                        await progress_callback({"type": "terminal_output", "message": f"📤 {stderr_text[:200]}{'...' if len(stderr_text) > 200 else ''}", "level": "stderr"})
-                    await progress_callback({"type": "terminal_output", "message": f"📊 Command finished with exit code: {process.returncode}", "level": "result"})
+                        progress_callback({"type": "terminal_output", "message": f"📤 {stderr_text[:200]}{'...' if len(stderr_text) > 200 else ''}", "level": "stderr"})
+                    progress_callback({"type": "terminal_output", "message": f"📊 Command finished with exit code: {process.returncode}", "level": "result"})
 
                 return {
                     "success": process.returncode == 0,
@@ -526,7 +523,7 @@ Only return the JSON array, no other text."""
                 error_msg = f"Command timed out after {timeout} seconds"
                 print(f"⏰ {error_msg}")
                 if progress_callback:
-                    await progress_callback({"type": "terminal_output", "message": f"⏰ {error_msg}", "level": "error"})
+                    progress_callback({"type": "terminal_output", "message": f"⏰ {error_msg}", "level": "error"})
                 return {
                     "success": False,
                     "error": error_msg,
@@ -540,7 +537,7 @@ Only return the JSON array, no other text."""
             error_msg = f"Failed to execute command: {str(e)}"
             print(f"❌ {error_msg}")
             if progress_callback:
-                await progress_callback({"type": "terminal_output", "message": f"❌ {error_msg}", "level": "error"})
+                progress_callback({"type": "terminal_output", "message": f"❌ {error_msg}", "level": "error"})
             return {
                 "success": False,
                 "error": error_msg,

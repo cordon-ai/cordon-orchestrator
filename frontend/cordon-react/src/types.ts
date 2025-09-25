@@ -3,9 +3,13 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  agentName: string | null;
+  agentName?: string | null;
   isStreaming?: boolean;
   tasks?: Task[];
+  currentTaskId?: string;
+  thinkingPhase?: string;
+  activeAgent?: string;
+  completedTasks?: number;
 }
 
 export interface Agent {
@@ -28,11 +32,16 @@ export interface Agent {
 export interface Task {
   id: string;
   description: string;
-  assigned_agent: string;
+  assigned_agent?: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  priority: number;
+  priority?: number;
   output?: string;
   error?: string;
+  started_at?: string;
+  completed_at?: string;
+  processing_started?: string;
+  processing_agent?: string;
+  duration?: number;
 }
 
 export type ChatState = 'idle' | 'selecting' | 'task_splitting' | 'task_executing' | 'responding';

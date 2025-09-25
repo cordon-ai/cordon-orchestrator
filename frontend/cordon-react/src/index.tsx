@@ -1,3 +1,6 @@
+// Import error suppression first to catch errors early
+import './utils/errorSuppression';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

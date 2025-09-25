@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+// Import error suppression first to catch errors early
+import './utils/errorSuppression';
+
+import React, { useState, useEffect } from 'react';
 import { Page } from './types';
 import { useChat } from './hooks/useChat';
 import { useAgents } from './hooks/useAgents';
@@ -9,12 +12,14 @@ import MarketplacePage from './components/marketplace/MarketplacePage';
 import AgentsPage from './components/agents/AgentsPage';
 import TaskVisualization from './components/chat/TaskVisualization';
 import ErrorBoundary from './components/ErrorBoundary';
+import { suppressResizeObserverErrors } from './utils/errorSuppression';
 import './App.css';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [sessionId] = useState(() => `session_${Math.random().toString(36).substr(2, 9)}`);
-  
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const { backendConnected } = useBackendConnection();
 
   const {
@@ -39,6 +44,12 @@ const App: React.FC = () => {
     currentTaskId
   } = useChat(sessionId, availableAgents);
 
+  // Initialize error suppression for ResizeObserver errors
+  useEffect(() => {
+    const cleanup = suppressResizeObserverErrors();
+    return cleanup;
+  }, []);
+
   const handleApiKeyConfirm = () => {
     if (showApiKeyModal) {
       const apiKey = apiKeyInput[showApiKeyModal.id] || '';
@@ -54,15 +65,30 @@ const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    // Suppress ResizeObserver errors globally
+    return suppressResizeObserverErrors();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-gray-900 flex">
       <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         backendConnected={backendConnected}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={setSidebarCollapsed}
       />
 
-      <div className="flex-1 main-content">
+      <div
+        className="flex-1"
+        style={{
+          marginLeft: sidebarCollapsed ? '4rem' : '18rem',
+          transition: 'margin-left 0.3s ease-in-out',
+          height: '100vh',
+          overflow: 'hidden'
+        }}
+      >
         {currentPage === 'chat' && (
           <ErrorBoundary>
             <OrchestratorCanvas
