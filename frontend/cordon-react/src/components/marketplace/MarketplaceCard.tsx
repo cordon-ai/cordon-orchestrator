@@ -26,10 +26,11 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = ({ agent, index, onAddAg
       <div className="flex-1 flex flex-col">
         <div className="flex items-start gap-3 mb-6">
           <div
-            className="p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110"
+            className="p-2.5 transition-all duration-300 group-hover:scale-110"
             style={{
               backgroundColor: getAgentColorStyle(agent.name).bg,
-              color: getAgentColorStyle(agent.name).text
+              color: getAgentColorStyle(agent.name).text,
+              borderRadius: '15px'
             }}
           >
             <IconComponent className="w-5 h-5" />
@@ -59,7 +60,8 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = ({ agent, index, onAddAg
             {agent.capabilities.slice(0, 2).map((capability) => (
               <span
                 key={capability}
-                className="text-xs px-2 py-1 rounded-md bg-white/5 text-white/50 font-light"
+                className="text-xs px-2 py-1 bg-white/5 text-white/50 font-light"
+                style={{ borderRadius: '15px' }}
               >
                 {capability}
               </span>

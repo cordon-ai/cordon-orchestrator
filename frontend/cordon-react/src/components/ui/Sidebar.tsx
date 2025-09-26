@@ -63,8 +63,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
         <button
           onClick={toggleCollapse}
-          className="absolute top-6 right-4 p-1.5 rounded-md bg-gray-800/60 hover:bg-gray-700/80 border border-gray-600/40 transition-colors duration-200"
+          className="absolute top-6 right-4 p-1.5 rounded-2xl bg-gray-800/60 hover:bg-gray-700/80 border-2 border-gray-600/40 transition-all duration-300"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          style={{
+            borderRadius: '15px',
+            backdropFilter: 'blur(10px)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+          }}
         >
           {collapsed ? (
             <ChevronRight className="w-3.5 h-3.5 text-white/90" />
@@ -78,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 p-4 space-y-1">
         <button
           onClick={() => onPageChange('chat')}
-          className={`nav-item w-full ${currentPage === 'chat' ? 'active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
+          className={`nav-item w-full ${currentPage === 'chat' ? 'active' : ''} ${collapsed ? 'justify-center' : 'justify-start'}`}
           title={collapsed ? 'Chat Interface' : ''}
         >
           <MessageSquare className="w-4 h-4 flex-shrink-0" />
@@ -90,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => onPageChange('marketplace')}
-          className={`nav-item w-full ${currentPage === 'marketplace' ? 'active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
+          className={`nav-item w-full ${currentPage === 'marketplace' ? 'active' : ''} ${collapsed ? 'justify-center' : 'justify-start'}`}
           title={collapsed ? 'Marketplace' : ''}
         >
           <Store className="w-4 h-4 flex-shrink-0" />
@@ -102,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => onPageChange('agents')}
-          className={`nav-item w-full ${currentPage === 'agents' ? 'active' : ''} ${collapsed ? 'justify-center px-2' : ''}`}
+          className={`nav-item w-full ${currentPage === 'agents' ? 'active' : ''} ${collapsed ? 'justify-center' : 'justify-start'}`}
           title={collapsed ? 'Active Agents' : ''}
         >
           <Users className="w-4 h-4 flex-shrink-0" />

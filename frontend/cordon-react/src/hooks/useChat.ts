@@ -87,6 +87,7 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
     switch (update.type) {
       case 'thinking':
       case 'task_splitting':
+      case 'thinking_phase':
         setChatState('selecting');
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
@@ -94,7 +95,7 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
                 ...msg,
                 content: update.message || '🧠 Processing...',
                 isStreaming: true,
-                thinkingPhase: 'analyzing'
+                thinkingPhase: update.thinkingPhase || 'analyzing'
               }
             : msg
         ));

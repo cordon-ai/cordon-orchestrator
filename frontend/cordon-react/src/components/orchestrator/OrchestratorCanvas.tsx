@@ -429,7 +429,7 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.15 }}
+          fitViewOptions={{ padding: 0.4 }}
           className="orchestrator-canvas"
           proOptions={{ hideAttribution: true }}
           nodesDraggable={true}
@@ -442,13 +442,13 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           preventScrolling={false}
           minZoom={0.1}
           maxZoom={2}
-          defaultViewport={{ x: -200, y: -50, zoom: 0.8 }}
+          defaultViewport={{ x: -200, y: -50, zoom: 0.5 }}
           onInit={(instance) => {
             reactFlowRef.current = instance;
             console.log('React Flow initialized:', instance);
             // Force fit view to ensure nodes are visible
             setTimeout(() => {
-              instance.fitView({ padding: 0.2 });
+              instance.fitView({ padding: 0.4 });
             }, 100);
           }}
           onWheel={(event) => {
@@ -488,36 +488,34 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
 
       {/* Bottom Composer */}
       <div className="bottom-composer">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              placeholder="Can you..."
-              className="composer-input w-full"
-              disabled={isStreaming}
-              rows={1}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isStreaming}
-              className="composer-send-button"
-            >
-              {isStreaming ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-          {inputMessage && (
-            <div className="text-xs text-white/40 mt-2 px-1">
-              Press Enter to send • Shift+Enter for new line
-            </div>
-          )}
+        <div className="relative">
+          <textarea
+            ref={inputRef}
+            value={inputMessage}
+            onChange={handleInput}
+            onKeyDown={handleKeyDown}
+            placeholder="Describe your task and I'll orchestrate the perfect agent solution..."
+            className="composer-input w-full"
+            disabled={isStreaming}
+            rows={1}
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim() || isStreaming}
+            className="composer-send-button"
+          >
+            {isStreaming ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
         </div>
+        {inputMessage && (
+          <div className="text-xs text-white/40 mt-2 px-1">
+            Press Enter to send • Shift+Enter for new line
+          </div>
+        )}
       </div>
 
       {/* Agent Details Modal */}

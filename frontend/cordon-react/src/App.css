@@ -18,9 +18,9 @@ body {
   font-weight: 300;
 }
 
-/* Cordon AI Design System - matching cordon-ai.github.io */
+/* Cordon AI Design System - Original Colors */
 :root {
-  /* Color tokens */
+  /* Color tokens - Original Scheme */
   --bg: #0b0f10;
   --card: #0f1417;
   --border: rgba(255, 255, 255, 0.12);
@@ -29,11 +29,11 @@ body {
   --text-secondary: rgba(255, 255, 255, 0.9);
   --text-muted: rgba(255, 255, 255, 0.6);
 
-  /* Accent colors */
+  /* Accent colors - Original Scheme */
   --blue-400: #60a5fa;
   --emerald-400: #34d399;
 
-  /* Legacy tokens for compatibility */
+  /* Legacy tokens for compatibility - Original Values */
   --cordon-primary: var(--blue-400);
   --cordon-secondary: var(--emerald-400);
   --cordon-accent: #f59e0b;
@@ -107,8 +107,8 @@ body {
 .border-t { border-top: 1px solid; }
 .border-white\/10 { border-color: rgba(255, 255, 255, 0.1); }
 .border-gray-600\/40 { border-color: rgba(75, 85, 99, 0.4); }
-.rounded-xl { border-radius: 0.75rem; }
-.rounded-2xl { border-radius: 1rem; }
+.rounded-xl { border-radius: 15px; }
+.rounded-2xl { border-radius: 15px; }
 
 /* Typography */
 .text-xs { font-size: 0.75rem; }
@@ -189,18 +189,22 @@ body {
 }
 
 .card {
-  background-color: var(--cordon-bg-card);
-  border: 1px solid var(--cordon-border);
-  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
   padding: 2rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   min-width: 0;
   width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .card:hover {
   border-color: var(--cordon-border-hover);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .chat-bubble {
@@ -258,117 +262,143 @@ body {
   color: var(--cordon-text-primary);
 }
 
-/* Button styles */
+/* Button styles - Original design with enhanced styling */
 .btn-primary {
-  background-color: var(--cordon-primary);
+  background: linear-gradient(135deg, var(--cordon-primary) 0%, var(--blue-400) 100%);
   color: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-weight: 400;
+  border: 2px solid var(--cordon-primary);
+  border-radius: 15px;
+  padding: 12px 24px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(45, 122, 122, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
+  text-transform: none;
+  letter-spacing: 0.5px;
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(45, 122, 122, 0.3);
+  background: var(--cordon-primary);
+  border-color: var(--cordon-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(96, 165, 250, 0.4);
 }
 
 .btn-secondary {
-  background-color: var(--cordon-secondary);
+  background: linear-gradient(135deg, var(--cordon-secondary) 0%, var(--emerald-400) 100%);
   color: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-weight: 400;
+  border: 2px solid var(--cordon-secondary);
+  border-radius: 15px;
+  padding: 12px 24px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.25);
+  text-transform: none;
+  letter-spacing: 0.5px;
 }
 
 .btn-secondary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+  background: var(--cordon-secondary);
+  border-color: var(--cordon-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(52, 211, 153, 0.4);
 }
-
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
+  border-radius: 15px;
+  font-family: 'Inter', sans-serif;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
-  border: none;
+  border: 2px solid transparent;
+  text-transform: none;
+  letter-spacing: 0.5px;
 }
 
 .btn-ghost {
   background-color: transparent;
   color: var(--cordon-text-secondary);
-  border: none;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  border: 2px solid var(--cordon-border);
+  padding: 10px 20px;
+  border-radius: 15px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
 }
 
 .btn-ghost:hover {
   background-color: var(--cordon-bg-hover);
+  border-color: var(--cordon-primary);
+  color: var(--cordon-primary);
+  transform: translateY(-1px);
 }
 
-/* Input styles */
+/* Input styles - CORD.ai design system */
 .input-field {
-  background-color: var(--cordon-bg-card);
-  border: 1px solid var(--cordon-border);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  padding: 12px 16px;
   color: var(--cordon-text-primary);
   font-size: 1rem;
+  font-family: 'Inter', sans-serif;
   font-weight: 300;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .input-field:focus {
   outline: none;
   border-color: var(--cordon-primary);
-  box-shadow: 0 0 0 3px rgba(45, 122, 122, 0.1);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
 }
 
 .input-field::placeholder {
   color: var(--cordon-text-muted);
+  font-family: 'Inter', sans-serif;
 }
 
-/* Navigation */
+/* Navigation - CORD.ai design system */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  border-radius: 0.75rem;
-  border: none;
+  padding: 12px 16px;
+  border-radius: 15px;
+  border: 2px solid transparent;
   background-color: transparent;
   color: var(--cordon-text-secondary);
   cursor: pointer;
   font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
   font-weight: 300;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.3s ease;
   width: 100%;
   justify-content: flex-start;
   overflow: hidden;
-  min-height: 2.75rem;
+  min-height: 44px;
   box-sizing: border-box;
 }
 
 .nav-item:hover {
-  background-color: var(--cordon-bg-hover);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .nav-item.active {
-  background-color: var(--cordon-primary);
+  background: linear-gradient(135deg, var(--cordon-primary) 0%, var(--blue-400) 100%);
+  border-color: var(--cordon-primary);
   color: white;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
 }
 
 /* Active state for collapsed nav items */
@@ -379,8 +409,9 @@ body {
 
 /* Ensure proper spacing for collapsed nav items */
 .sidebar.w-16 .nav-item {
-  padding: 0.875rem 0.5rem;
+  padding: 12px 8px;
   justify-content: center;
+  min-height: 44px;
 }
 
 /* Sidebar */
@@ -598,6 +629,27 @@ body {
   .sidebar.w-16 {
     width: 3rem;
   }
+
+  .composer-input {
+    min-height: 2.5rem;
+    max-height: 6rem;
+    font-size: 0.8rem;
+    padding: 0.6rem 2.5rem 0.6rem 0.8rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .composer-input {
+    min-height: 3.5rem;
+    max-height: 12rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .composer-input {
+    min-height: 4rem;
+    max-height: 15rem;
+  }
 }
 
 /* Remove the main-content margin rules since we're handling it in React */
@@ -790,14 +842,14 @@ body {
 
 /* Orchestrator canvas styles */
 .orchestrator-canvas {
-  background: var(--bg);
+  background: #000000;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   width: 100%;
   height: 100%;
 }
 
 .orchestrator-canvas .react-flow__background {
-  background: var(--bg);
+  background: #000000;
 }
 
 .orchestrator-canvas .react-flow__background-pattern {
@@ -1045,37 +1097,53 @@ body {
 
 /* Bottom composer styles */
 .bottom-composer {
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  background: var(--bg);
+  left: 0;
+  right: 0;
+  background: #000000;
   border-top: 1px solid var(--border);
   backdrop-filter: blur(10px);
   padding: 1rem;
+  z-index: 10;
+  /* Account for sidebar width */
+  margin-left: var(--sidebar-width, 18rem);
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* When sidebar is collapsed */
+.sidebar-collapsed .bottom-composer {
+  margin-left: 4rem;
 }
 
 .composer-input {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
   color: var(--text-primary);
   resize: none;
   min-height: 3rem;
   max-height: 9rem;
   padding: 0.75rem 3rem 0.75rem 1rem;
   font-size: 0.875rem;
-  font-weight: 400;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
   line-height: 1.5;
   letter-spacing: -0.025em;
+  width: 100%;
 }
 
 .composer-input:focus {
   outline: none;
-  border-color: var(--blue-400);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  border-color: var(--cordon-primary);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
 }
 
 .composer-input::placeholder {
   color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
 }
 
 .composer-send-button {
@@ -1083,22 +1151,27 @@ body {
   right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--blue-400);
+  background: linear-gradient(135deg, var(--cordon-primary) 0%, var(--blue-400) 100%);
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 15px;
   padding: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
 }
 
 .composer-send-button:hover {
-  background: #3b82f6;
+  background: var(--cordon-primary);
+  transform: translateY(-50%) translateY(-1px);
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
 }
 
 .composer-send-button:disabled {
   background: var(--text-muted);
   cursor: not-allowed;
+  transform: translateY(-50%);
+  box-shadow: none;
 }
 
 /* Custom styling for ReactFlow controls - White buttons for dark background */
@@ -1127,7 +1200,7 @@ body {
 
 /* Header styles */
 .orchestrator-header {
-  background: var(--bg);
+  background: #000000;
   border-bottom: 1px solid var(--border);
   padding: 1rem 1.5rem;
   backdrop-filter: blur(10px);
@@ -1316,30 +1389,30 @@ body {
   }
 }
 
-/* ResizeObserver error suppression - Aggressive */
+/* ResizeObserver error suppression - Minimal */
 .orchestrator-node[data-type="supervisor"] {
-  contain: layout style size !important;
-  will-change: auto !important;
-  transform: translateZ(0) !important;
-  backface-visibility: hidden !important;
+  contain: layout !important;
+  position: relative !important;
 }
 
 .orchestrator-node[data-type="supervisor"] * {
-  contain: layout style !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
-  will-change: auto !important;
 }
 
-/* Prevent any layout shifts in supervisor card */
-.orchestrator-node[data-type="supervisor"] .brain-container,
-.orchestrator-node[data-type="supervisor"] .brain-glow,
-.orchestrator-node[data-type="supervisor"] .brain-pulse,
-.orchestrator-node[data-type="supervisor"] .brain-connection-line,
-.orchestrator-node[data-type="supervisor"] .processing-dots,
-.orchestrator-node[data-type="supervisor"] .processing-dot {
-  contain: layout style size !important;
-  will-change: transform, opacity !important;
-  transform: translateZ(0) !important;
-  backface-visibility: hidden !important;
+/* Disable ResizeObserver for supervisor card completely */
+.orchestrator-node[data-type="supervisor"] {
+  resize: none !important;
+}
+
+/* Force stable dimensions */
+.orchestrator-node[data-type="supervisor"] {
+  width: 420px !important;
+  height: 280px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  min-height: 280px !important;
+  max-height: 280px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }

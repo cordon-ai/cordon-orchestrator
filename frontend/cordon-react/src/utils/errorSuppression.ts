@@ -111,13 +111,22 @@ if (originalResizeObserver) {
     constructor(callback: ResizeObserverCallback) {
       const wrappedCallback: ResizeObserverCallback = (entries, observer) => {
         try {
-          callback(entries, observer);
+          // Use requestAnimationFrame to defer callback execution
+          requestAnimationFrame(() => {
+            try {
+              callback(entries, observer);
+            } catch (error) {
+              // Silently ignore all ResizeObserver errors
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('ResizeObserver callback error suppressed:', error);
+              }
+            }
+          });
         } catch (error) {
-          // Silently ignore ResizeObserver errors
-          if (error instanceof Error && error.message.includes('ResizeObserver')) {
-            return;
+          // Silently ignore all ResizeObserver errors
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('ResizeObserver wrapper error suppressed:', error);
           }
-          throw error;
         }
       };
       super(wrappedCallback);
@@ -135,4 +144,34 @@ console.error = (...args) => {
     return; // Suppress these errors
   }
   originalConsoleError.apply(console, args);
+};
+
+// Global ResizeObserver error suppression
+const originalAddEventListener = window.addEventListener;
+window.addEventListener = function(this: Window, type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
+  if (type === 'error' && typeof listener === 'function') {
+    const wrappedListener: EventListener = function(this: Window, event: Event) {
+      const errorEvent = event as ErrorEvent;
+      if (errorEvent.message && errorEvent.message.includes('ResizeObserver')) {
+        errorEvent.preventDefault();
+        errorEvent.stopPropagation();
+        return false;
+      }
+      return (listener as EventListener).call(this, event);
+    };
+    return originalAddEventListener.call(this, type, wrappedListener, options);
+  }
+  return originalAddEventListener.call(this, type, listener, options);
+};
+
+// Suppress React error boundaries for ResizeObserver
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('ResizeObserver') || 
+      message.includes('loop completed with undelivered notifications') ||
+      message.includes('loop limit exceeded')) {
+    return; // Suppress these warnings
+  }
+  originalConsoleWarn.apply(console, args);
 };

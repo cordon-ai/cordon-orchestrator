@@ -55,17 +55,9 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
   };
 
   return (
-    <div className={`orchestrator-node w-[420px] h-[280px] px-6 pt-6 pb-8 transition-all duration-300 overflow-hidden flex flex-col ${
+    <div className={`orchestrator-node w-[420px] h-[280px] px-6 pt-6 pb-8 transition-all duration-300 flex flex-col ${
       isActivelyThinking ? 'ring-1 ring-blue-400/20 shadow-lg shadow-blue-400/10' : ''
-    }`} data-type="supervisor" style={{ 
-      width: '420px', 
-      height: '280px', 
-      minWidth: '420px', 
-      maxWidth: '420px', 
-      minHeight: '280px', 
-      maxHeight: '280px',
-      contain: 'layout style size'
-    }}>
+    }`} data-type="supervisor">
       <Handle
         type="source"
         position={Position.Bottom}
@@ -119,97 +111,54 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
 
       {/* Current Status Section - Main Display Area */}
       <div className="flex-1 flex flex-col items-center justify-center" style={{ 
-        minHeight: '120px', 
-        contain: 'layout style size',
-        willChange: 'auto',
-        transform: 'translateZ(0)',
-        backfaceVisibility: 'hidden'
+        minHeight: '120px'
       }}>
         {isActivelyThinking ? (
           <div className="flex flex-col items-center gap-3" style={{ 
             width: '100%', 
-            maxWidth: '100%',
-            contain: 'layout style size',
-            willChange: 'auto'
+            maxWidth: '100%'
           }}>
             {/* Animated Brain Icon with Connection */}
             <div className="relative" style={{ 
               width: '48px', 
               height: '48px', 
-              flexShrink: 0,
-              contain: 'layout style size',
-              willChange: 'auto',
-              transform: 'translateZ(0)'
+              flexShrink: 0
             }}>
               <div className={`brain-container ${isActivelyThinking ? 'brain-thinking' : ''}`} style={{ 
                 width: '100%', 
-                height: '100%',
-                contain: 'layout style size',
-                willChange: 'transform, opacity'
+                height: '100%'
               }}>
-                <Brain className="w-12 h-12 text-blue-400 brain-icon-glow" style={{ 
-                  width: '48px', 
-                  height: '48px',
-                  contain: 'layout style size',
-                  willChange: 'auto'
-                }} />
+                <Brain className="w-12 h-12 text-blue-400 brain-icon-glow" />
               </div>
               {isActivelyThinking && (
                 <>
-                  <div className="absolute inset-0 brain-glow" style={{ 
-                    width: '48px', 
-                    height: '48px',
-                    contain: 'layout style size',
-                    willChange: 'transform, opacity'
-                  }}></div>
-                  <div className="absolute inset-0 brain-pulse" style={{ 
-                    width: '48px', 
-                    height: '48px',
-                    contain: 'layout style size',
-                    willChange: 'transform, opacity'
-                  }}></div>
+                  <div className="absolute inset-0 brain-glow"></div>
+                  <div className="absolute inset-0 brain-pulse"></div>
                 </>
               )}
             </div>
             
             {/* Connection Line */}
-            <div className="brain-connection-line" style={{
-              contain: 'layout style size',
-              willChange: 'transform, opacity'
-            }}></div>
+            <div className="brain-connection-line"></div>
             
             {/* Status Text with Processing Indicator */}
             <div className="text-center" style={{ 
               width: '100%', 
-              maxWidth: '100%',
-              contain: 'layout style size'
+              maxWidth: '100%'
             }}>
               <div className="text-sm text-blue-400 font-medium mb-2 flex items-center justify-center gap-2">
                 <span>{hasRunningTasks ? 'Processing Tasks' : 'Thinking'}</span>
-                <div className="processing-dots" style={{
-                  contain: 'layout style size',
-                  willChange: 'auto'
-                }}>
-                  <span className="processing-dot" style={{
-                    contain: 'layout style size',
-                    willChange: 'transform, opacity'
-                  }}>.</span>
-                  <span className="processing-dot" style={{
-                    contain: 'layout style size',
-                    willChange: 'transform, opacity'
-                  }}>.</span>
-                  <span className="processing-dot" style={{
-                    contain: 'layout style size',
-                    willChange: 'transform, opacity'
-                  }}>.</span>
+                <div className="processing-dots">
+                  <span className="processing-dot">.</span>
+                  <span className="processing-dot">.</span>
+                  <span className="processing-dot">.</span>
                 </div>
               </div>
               <div className="text-xs text-white/60" style={{ 
                 maxWidth: '100%', 
                 wordWrap: 'break-word', 
                 overflowWrap: 'break-word',
-                lineHeight: '1.4',
-                contain: 'layout style size'
+                lineHeight: '1.4'
               }}>
                 {currentStep || functionOutput || 'Analyzing request and planning task execution...'}
               </div>
@@ -218,19 +167,16 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
         ) : (
           <div className="flex flex-col items-center gap-3 text-center" style={{ 
             width: '100%', 
-            maxWidth: '100%',
-            contain: 'layout style size'
+            maxWidth: '100%'
           }}>
             <div className="w-12 h-12 flex items-center justify-center" style={{ 
-              flexShrink: 0,
-              contain: 'layout style size'
+              flexShrink: 0
             }}>
               <Brain className="w-8 h-8 text-blue-400" />
             </div>
             <div style={{ 
               width: '100%', 
-              maxWidth: '100%',
-              contain: 'layout style size'
+              maxWidth: '100%'
             }}>
               <div className="text-sm text-white/90 font-medium mb-1">Ready</div>
               <div className="text-xs text-white/60">Waiting for requests</div>

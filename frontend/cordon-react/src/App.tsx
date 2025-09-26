@@ -97,7 +97,8 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black to-gray-900 flex">
+    <div className={`min-h-screen bg-gradient-to-br from-black to-gray-900 flex ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} 
+         style={{ '--sidebar-width': sidebarCollapsed ? '4rem' : '18rem' } as React.CSSProperties}>
       <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}
@@ -119,7 +120,7 @@ const App: React.FC = () => {
           <ErrorBoundary>
             <OrchestratorCanvas
               onSendMessage={sendMessage}
-              isStreaming={chatState === 'responding'}
+              isStreaming={chatState === 'responding' || chatState === 'selecting'}
               backendConnected={backendConnected}
               currentTasks={currentTasks}
               currentTaskId={currentTaskId}
