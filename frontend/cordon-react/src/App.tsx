@@ -68,6 +68,7 @@ const App: React.FC = () => {
     messages,
     chatState,
     sendMessage,
+    stopStreaming,
     showTaskVisualization,
     setShowTaskVisualization,
     currentTasks,
@@ -125,6 +126,7 @@ const App: React.FC = () => {
               currentTasks={currentTasks}
               currentTaskId={currentTaskId}
               messages={messages}
+              onStopStreaming={stopStreaming}
             />
           </ErrorBoundary>
         )}

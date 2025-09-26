@@ -25,6 +25,7 @@ interface OrchestratorCanvasProps {
   currentTasks?: BackendTask[];
   currentTaskId?: string;
   messages?: any[];
+  onStopStreaming?: () => void;
 }
 
 const nodeTypes: NodeTypes = {
@@ -38,7 +39,8 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
   backendConnected,
   currentTasks = [],
   currentTaskId,
-  messages = []
+  messages = [],
+  onStopStreaming
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<AgentData | null>(null);
@@ -60,7 +62,11 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     setCurrentStep('');
     // Clear progress
     setSupervisorProgress(undefined);
-    // Note: isStreaming and currentTasks are controlled by parent component
+    // Stop the streaming from parent component
+    if (onStopStreaming) {
+      onStopStreaming();
+      console.log('Stopping thinking...');
+    }
   };
 
 

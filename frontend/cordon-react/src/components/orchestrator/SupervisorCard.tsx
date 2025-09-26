@@ -55,7 +55,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
   };
 
   return (
-    <div className={`orchestrator-node w-[420px] h-[280px] px-6 pt-6 pb-8 transition-all duration-300 flex flex-col ${
+    <div className={`orchestrator-node w-[420px] h-[300px] px-6 pt-6 pb-10 transition-all duration-300 flex flex-col ${
       isActivelyThinking ? 'ring-1 ring-blue-400/20 shadow-lg shadow-blue-400/10' : ''
     }`} data-type="supervisor">
       <Handle
@@ -65,45 +65,37 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
       />
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center relative transition-all duration-300 ${
-          isActivelyThinking 
-            ? 'bg-blue-400/20 border border-blue-400/40 shadow-lg shadow-blue-400/20' 
-            : 'bg-blue-400/10 border border-blue-400/20'
-        }`}>
-          <Settings className={`w-4 h-4 transition-all duration-300 ${
-            isActivelyThinking ? 'text-blue-300 animate-pulse' : 'text-blue-400'
-          }`} />
-          {isActivelyThinking && (
-            <>
-              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-              <div className="absolute inset-0 rounded-lg bg-blue-400/10 animate-ping"></div>
-            </>
-          )}
-        </div>
+      <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+        <Settings className={`w-5 h-5 transition-all duration-300 ${
+          isActivelyThinking ? 'text-blue-300 animate-pulse' : 'text-blue-400'
+        }`} />
         <div className="flex-1 min-w-0">
-          <h3 className="text-white/95 font-medium text-sm tracking-tight">Supervisor</h3>
-          <p className="text-white/50 text-xs">
+          <h3 className="text-white/95 font-medium text-lg tracking-tight">Supervisor</h3>
+          <p className="text-white/50 text-sm">
             {progress ? `${progress.phase} (${progress.current}/${progress.total})` : 'Task Orchestrator'}
           </p>
         </div>
         {isActivelyThinking && onStopThinking && (
           <button
-            onClick={onStopThinking}
-            className="flex items-center gap-1.5 px-2 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 hover:border-red-500/60 rounded-lg transition-all duration-200 text-red-400 hover:text-red-300"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onStopThinking();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-transparent hover:bg-blue-500/10 border border-blue-400/60 hover:border-blue-400 rounded-full transition-all duration-200 text-blue-400 hover:text-blue-300 text-xs font-medium"
             title="Stop thinking"
           >
             <Square className="w-3 h-3" />
-            <span className="text-xs font-medium">Stop</span>
+            Stop
           </button>
         )}
       </div>
 
-      {/* Request Section - Scrollable */}
+      {/* Request Section - Centered */}
       <div className="mb-4 flex-shrink-0">
-        <div className="p-3 bg-white/5 rounded-lg max-h-20 overflow-y-auto">
-          <div className="text-xs text-white/80 mb-1">Request:</div>
-          <div className="text-xs text-white/40 leading-relaxed break-words">
+        <div className="p-3 bg-white/5 rounded-lg max-h-20 overflow-y-auto text-center">
+          <div className="text-sm text-white/100 mb-1 font-medium">Request:</div>
+          <div className="text-sm text-white/80 leading-relaxed break-words">
             {prompt || 'No request'}
           </div>
         </div>
@@ -111,10 +103,10 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
 
       {/* Current Status Section - Main Display Area */}
       <div className="flex-1 flex flex-col items-center justify-center" style={{ 
-        minHeight: '120px'
+        minHeight: '80px'
       }}>
         {isActivelyThinking ? (
-          <div className="flex flex-col items-center gap-3" style={{ 
+          <div className="flex flex-col items-center gap-2" style={{ 
             width: '100%', 
             maxWidth: '100%'
           }}>
@@ -124,7 +116,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
               height: '48px', 
               flexShrink: 0
             }}>
-              <div className={`brain-container ${isActivelyThinking ? 'brain-thinking' : ''}`} style={{ 
+              <div className={`brain-container ${isActivelyThinking ? 'brain-thinking' : ''} rounded-full`} style={{ 
                 width: '100%', 
                 height: '100%'
               }}>
@@ -146,7 +138,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
               width: '100%', 
               maxWidth: '100%'
             }}>
-              <div className="text-sm text-blue-400 font-medium mb-2 flex items-center justify-center gap-2">
+              <div className="text-base text-blue-400 font-medium mb-2 flex items-center justify-center gap-2">
                 <span>{hasRunningTasks ? 'Processing Tasks' : 'Thinking'}</span>
                 <div className="processing-dots">
                   <span className="processing-dot">.</span>
@@ -154,7 +146,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
                   <span className="processing-dot">.</span>
                 </div>
               </div>
-              <div className="text-xs text-white/60" style={{ 
+              <div className="text-sm text-white/60" style={{ 
                 maxWidth: '100%', 
                 wordWrap: 'break-word', 
                 overflowWrap: 'break-word',
@@ -165,7 +157,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 text-center" style={{ 
+          <div className="flex flex-col items-center gap-2 text-center" style={{ 
             width: '100%', 
             maxWidth: '100%'
           }}>
@@ -178,8 +170,8 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
               width: '100%', 
               maxWidth: '100%'
             }}>
-              <div className="text-sm text-white/90 font-medium mb-1">Ready</div>
-              <div className="text-xs text-white/60">Waiting for requests</div>
+              <div className="text-base text-white/90 font-medium mb-1">Ready</div>
+              <div className="text-sm text-white/60">Waiting for requests</div>
             </div>
           </div>
         )}
