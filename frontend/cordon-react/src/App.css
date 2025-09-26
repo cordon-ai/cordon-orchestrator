@@ -880,23 +880,34 @@ body {
   flex-grow: 0 !important;
 }
 
+/* Supervisor card scrolling overrides */
+.orchestrator-node[data-type="supervisor"] .scrollable-content {
+  overflow-y: auto !important;
+  max-height: 180px !important;
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* Custom scrollbar for supervisor card */
 .orchestrator-node[data-type="supervisor"]::-webkit-scrollbar {
-  width: 6px;
+  width: 10px;
 }
 
 .orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
 }
 
 .orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  background: rgba(59, 130, 246, 0.8);
+  border-radius: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(59, 130, 246, 1);
 }
 
 /* Ensure internal elements don't exceed card width */
