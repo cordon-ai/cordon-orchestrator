@@ -240,22 +240,22 @@ body {
 }
 
 .card {
-  background: rgba(17, 24, 39, 0.3);
+  background: rgba(55, 65, 81, 0.6);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  border: 1px solid rgba(107, 114, 128, 0.5);
   border-radius: 0.5rem;
   padding: 2rem;
   transition: all 0.3s ease;
   min-width: 0;
   width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .card:hover {
   border-color: #0891b2;
-  background: rgba(17, 24, 39, 0.5);
+  background: rgba(55, 65, 81, 0.8);
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 .chat-bubble {
@@ -903,20 +903,16 @@ body {
 /* Prevent React Flow from overriding supervisor card dimensions */
 .react-flow__node[data-id="supervisor"] {
   width: 420px !important;
-  height: 300px !important;
   min-width: 420px !important;
   max-width: 420px !important;
-  min-height: 300px !important;
-  max-height: 300px !important;
+  min-height: 280px !important;
 }
 
 .react-flow__node[data-id="supervisor"] .orchestrator-node {
   width: 420px !important;
-  height: 300px !important;
   min-width: 420px !important;
   max-width: 420px !important;
-  min-height: 300px !important;
-  max-height: 300px !important;
+  min-height: 280px !important;
 }
 
 /* React Flow handle styles */
@@ -945,7 +941,7 @@ body {
 }
 
 .orchestrator-canvas .react-flow__background-pattern {
-  opacity: 0.3;
+  opacity: 1;
 }
 
 /* Ensure ReactFlow can handle zoom properly */
@@ -1017,11 +1013,9 @@ body {
 .orchestrator-node[data-type="supervisor"] {
   --node-width: 420px;
   width: 420px !important;
-  height: 300px !important;
   min-width: 420px !important;
   max-width: 420px !important;
-  min-height: 300px !important;
-  max-height: 300px !important;
+  min-height: 280px !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
   background: rgba(31, 41, 55, 0.8) !important;
@@ -1540,4 +1534,47 @@ body {
   max-height: 300px !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
+}
+
+/* Glowing edge animations for active task connections */
+.glowing-edge {
+  animation: edgeGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes edgeGlow {
+  0% {
+    filter: drop-shadow(0 0 8px #22d3ee);
+    stroke-width: 4;
+  }
+  100% {
+    filter: drop-shadow(0 0 16px #22d3ee) drop-shadow(0 0 24px #22d3ee);
+    stroke-width: 5;
+  }
+}
+
+/* Enhanced edge styling for React Flow */
+.react-flow__edge.glowing-edge path {
+  stroke: #22d3ee !important;
+  stroke-width: 4 !important;
+  filter: drop-shadow(0 0 8px #22d3ee);
+  animation: edgeGlow 2s ease-in-out infinite alternate;
+}
+
+.react-flow__edge.glowing-edge .react-flow__edge-path {
+  stroke: #22d3ee !important;
+  stroke-width: 4 !important;
+  filter: drop-shadow(0 0 8px #22d3ee);
+  animation: edgeGlow 2s ease-in-out infinite alternate;
+}
+
+/* Animated edge for running tasks */
+.react-flow__edge.animated path {
+  stroke-dasharray: 5 5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
 }

@@ -27,7 +27,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-8"
+      className="p-8 bg-black min-h-full"
     >
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-light text-white/95 mb-2 tracking-tight">

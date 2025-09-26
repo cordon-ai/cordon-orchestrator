@@ -52,7 +52,8 @@ export const api = {
     userId: string,
     onProgress: (update: any) => void,
     onComplete: (response: string, agentName: string) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    abortController?: AbortController
   ) {
     console.log('Starting streaming request:', { message, sessionId, userId, baseUrl: BASE_URL });
     
@@ -67,7 +68,8 @@ export const api = {
           message,
           session_id: sessionId,
           user_id: userId
-        })
+        }),
+        signal: abortController?.signal
       });
 
       console.log('Response received:', response.status, response.statusText);
@@ -84,6 +86,13 @@ export const api = {
 
       if (reader) {
         while (true) {
+          // Check if request was aborted
+          if (abortController?.signal.aborted) {
+            console.log('Streaming request aborted');
+            reader.cancel();
+            break;
+          }
+
           const { done, value } = await reader.read();
 
           if (done) break;

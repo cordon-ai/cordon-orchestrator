@@ -53,6 +53,8 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     phase: string;
   } | undefined>();
   const [agentSpawnQueue, setAgentSpawnQueue] = useState<Set<string>>(new Set());
+  const [dynamicAgentNodes, setDynamicAgentNodes] = useState<Map<string, Node>>(new Map());
+  const [activeTaskEdges, setActiveTaskEdges] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const reactFlowRef = useRef<ReactFlowInstance>(null);
 
@@ -218,9 +220,127 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     }));
   }, [currentTasks]);
 
-  // Convert tasks to agents using useMemo to prevent infinite loops
+  const handleAgentExpand = useCallback((agentId: string) => {
+    // Find agent from dynamic nodes using a ref to avoid dependency issues
+    setSelectedAgent(prev => {
+      // We'll find the agent in the modal component instead
+      return { id: agentId } as AgentData;
+    });
+    setIsModalOpen(true);
+  }, []);
+
+  // Create dynamic agent nodes for each task - aligned with sequential execution
+  useEffect(() => {
+    console.log('🔍 Processing tasks for dynamic node creation:', {
+      currentTasks,
+      taskCount: currentTasks.length,
+      tasks: currentTasks.map(t => ({ id: t.id, agent: t.assigned_agent, status: t.status, output: t.output?.substring(0, 50) }))
+    });
+    
+    const newAgentNodes = new Map<string, Node>();
+    const newActiveEdges = new Set<string>();
+    
+    // Sort tasks by priority first, then by status, but maintain stable positioning
+    const sortedTasks = [...currentTasks].sort((a, b) => {
+      // First sort by priority (higher priority first)
+      if (a.priority !== b.priority) {
+        return (b.priority || 0) - (a.priority || 0);
+      }
+      // Then sort by status: pending -> running -> completed -> failed
+      const statusOrder = { 'pending': 0, 'running': 1, 'completed': 2, 'failed': 3 };
+      return statusOrder[a.status] - statusOrder[b.status];
+    });
+    
+    // Create a stable position map based on task ID to prevent cards from moving
+    const taskPositionMap = new Map<string, number>();
+    sortedTasks.forEach((task, index) => {
+      taskPositionMap.set(task.id, index);
+    });
+    
+    // Process all tasks (not just sorted ones) to maintain stable positions
+    currentTasks.forEach((task) => {
+      if (!task.assigned_agent) return;
+      
+      const agentId = `agent-${task.assigned_agent}-${task.id}`;
+      const isRunning = task.status === 'running';
+      const isCompleted = task.status === 'completed';
+      const isFailed = task.status === 'failed';
+      const isPending = task.status === 'pending';
+      
+      // Get stable position from the position map
+      const stableIndex = taskPositionMap.get(task.id) || 0;
+      
+      console.log(`🔍 Task ${task.id} (${task.assigned_agent}): status=${task.status}, isRunning=${isRunning}, isCompleted=${isCompleted}, stableIndex=${stableIndex}`);
+      
+      // Create agent data for this specific task
+      const agentData: AgentData = {
+        id: agentId,
+        name: task.assigned_agent,
+        status: task.status === 'pending' ? 'queued' :
+                task.status === 'running' ? 'running' :
+                task.status === 'completed' ? 'done' : 'error',
+        preview: task.status === 'completed' ? 
+          (task.output ? 
+            (task.assigned_agent === 'Coder' ? 
+              `${task.output.substring(0, 50)}${task.output.length > 50 ? '...' : ''}` : 
+              `${task.output.substring(0, 140)}${task.output.length > 140 ? '...' : ''}`) : 
+            `${task.assigned_agent} completed successfully`) :
+          task.status === 'running' ? `${task.assigned_agent} is processing...` :
+          task.status === 'failed' ? `${task.assigned_agent} encountered an error` :
+          `${task.assigned_agent} is queued`,
+        fullTranscript: task.output ? 
+          `## Agent: ${task.assigned_agent}\n\n**Task:** ${task.description}\n\n**Status:** ${task.status}\n\n---\n\n### Agent Output\n\n${task.output}` :
+          `## Agent: ${task.assigned_agent}\n\n**Task:** ${task.description}\n\n**Status:** ${task.status}\n\n---\n\n*No output available yet.*`,
+        startTime: new Date(),
+        endTime: task.status === 'completed' ? new Date() : undefined,
+        structuredOutput: task.output ? {
+          type: 'agent_output',
+          agent: task.assigned_agent,
+          task: task.description,
+          status: task.status,
+          output: task.output,
+          timestamp: new Date().toISOString()
+        } : undefined,
+        taskDescription: task.description,
+        progress: {
+          current: isCompleted ? 1 : 0,
+          total: 1,
+          phase: task.status
+        }
+      };
+
+      // Create the node with stable positioning
+      const node: Node = {
+        id: agentId,
+        type: 'agent',
+        position: {
+          // Use stable index to prevent cards from moving
+          x: 100 + stableIndex * 400, // 400px spacing between nodes
+          y: 500 // Same Y level for all agent nodes - increased distance from supervisor
+        },
+        data: {
+          ...agentData,
+          onExpand: handleAgentExpand,
+          isNewSpawn: true, // Always mark as new spawn for dynamic nodes
+        },
+      };
+
+      newAgentNodes.set(agentId, node);
+      
+            // Track active edges for running tasks only
+            if (isRunning) {
+              console.log(`🔥 Adding active edge for running task: supervisor-${agentId}`);
+              newActiveEdges.add(`supervisor-${agentId}`);
+            }
+    });
+
+    setDynamicAgentNodes(newAgentNodes);
+    setActiveTaskEdges(newActiveEdges);
+  }, [currentTasks]);
+
+  // Convert tasks to agents using useMemo to prevent infinite loops (legacy support)
   const agents: AgentData[] = useMemo(() => {
-    console.log('Creating agents from tasks:', currentTasks);
+    console.log('Creating agents from tasks (legacy):', currentTasks);
     return (currentTasks || [])
       .filter(task => task.assigned_agent)
       .reduce((acc: AgentData[], task) => {
@@ -302,87 +422,78 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     supervisorTasksCount: supervisorTasks.length
   });
 
-  const handleAgentExpand = useCallback((agentId: string) => {
-    const agent = agents.find(a => a.id === agentId);
-    if (agent) {
-      setSelectedAgent(agent);
-      setIsModalOpen(true);
-    }
-  }, [agents]);
 
-  // Enhanced node initialization with thinking steps and real-time agent spawning
+  // Enhanced node initialization with dynamic agent spawning and glowing edges
   useEffect(() => {
     console.log('Creating supervisor node with enhanced data:', {
       supervisorTasks, isStreaming, functionOutput, currentStep, supervisorProgress
     });
 
+    // Use dynamic agent nodes instead of legacy agents
+    const dynamicNodes = Array.from(dynamicAgentNodes.values());
+    
     // Always create supervisor node, even when there are no tasks
     const supervisorNode: Node = {
       id: 'supervisor',
       type: 'supervisor',
-      position: { x: 400, y: 100 },
+      position: { 
+        x: dynamicNodes.length > 0 ? 
+          // Center supervisor above the agent nodes using stable positioning
+          (100 + (dynamicNodes.length - 1) * 400) / 2 : 
+          400, // Default position if no agents
+        y: 100 
+      },
       data: {
         tasks: supervisorTasks,
         isStreaming,
-        prompt: messages.find(m => m.role === 'user')?.content,
+        prompt: messages.filter(m => m.role === 'user').pop()?.content,
         functionOutput,
         currentStep,
         progress: supervisorProgress,
         onStopThinking: handleStopThinking
       },
     };
-
-    // Enhanced agent node positioning with staggered animation
-    const agentNodes: Node[] = agents.map((agent, index) => {
-      const isNewAgent = !agentSpawnQueue.has(agent.id);
-      if (isNewAgent) {
-        setAgentSpawnQueue(prev => new Set(Array.from(prev).concat(agent.id)));
-        // Add a slight delay for spawn animation
-        setTimeout(() => {
-          // Trigger re-render for spawn animation
-        }, 100 * index);
-      }
-
-      return {
-        id: agent.id,
-        type: 'agent',
-        position: {
-          x: 100 + (index % 3) * 300,
-          y: 400 + Math.floor(index / 3) * 180
-        },
-        data: {
-          ...agent,
-          onExpand: handleAgentExpand,
-          isNewSpawn: isNewAgent,
-        },
-      };
-    });
-
-    // Enhanced edge styling with status-based animations
-    const agentEdges: Edge[] = agents.map((agent, index) => ({
-      id: `supervisor-${agent.id}`,
-      source: 'supervisor',
-      target: agent.id,
-      type: 'smoothstep',
-      animated: agent.status === 'running',
-      style: {
-        stroke: agent.status === 'done' ? '#34d399' :
-                agent.status === 'error' ? '#f87171' :
-                agent.status === 'running' ? '#60a5fa' : '#6b7280',
-        strokeWidth: agent.status === 'running' ? 3 : 2,
-        strokeDasharray: agent.status === 'queued' ? '5,5' : undefined
-      }
-    }));
+    
+    // Create edges - all supervisor-to-agent connections
+    const agentEdges: Edge[] = [];
+    
+            // Connect supervisor to ALL agent nodes
+            dynamicNodes.forEach((node) => {
+              const edgeId = `supervisor-${node.id}`;
+              const isActive = activeTaskEdges.has(edgeId);
+              const agentData = node.data as AgentData;
+              
+              console.log(`🔗 Creating supervisor edge: ${edgeId}, isActive=${isActive}, status=${agentData.status}`);
+      
+              agentEdges.push({
+                id: edgeId,
+                source: 'supervisor',
+                target: node.id,
+                type: 'smoothstep',
+                animated: isActive,
+                style: {
+                  stroke: agentData.status === 'done' ? '#34d399' :
+                          agentData.status === 'error' ? '#f87171' :
+                          agentData.status === 'running' ? '#22d3ee' : '#6b7280',
+                  strokeWidth: agentData.status === 'running' ? 4 : 2,
+                  strokeDasharray: agentData.status === 'queued' ? '5,5' : undefined,
+                  filter: agentData.status === 'running' ? 'drop-shadow(0 0 8px #22d3ee)' : undefined,
+                },
+                className: agentData.status === 'running' ? 'glowing-edge' : undefined
+              });
+            });
+    
+    // All edges are now supervisor-to-agent connections
 
     // Always show at least the supervisor node
-    const allNodes = [supervisorNode, ...agentNodes];
+    const allNodes = [supervisorNode, ...dynamicNodes];
     setNodes(allNodes);
     setEdges(agentEdges);
-    console.log('Enhanced nodes set:', allNodes);
-    console.log('Supervisor node details:', supervisorNode);
+    console.log('Dynamic nodes set:', allNodes);
+    console.log('Active edges:', Array.from(activeTaskEdges));
     console.log('React Flow will render nodes:', allNodes.length);
     console.log('Node types available:', Object.keys(nodeTypes));
-  }, [supervisorTasks, agents, isStreaming, handleAgentExpand, setNodes, setEdges, messages, functionOutput, currentStep, supervisorProgress, agentSpawnQueue]);
+  }, [supervisorTasks, dynamicAgentNodes, activeTaskEdges, isStreaming, supervisorProgress]);
 
   const handleSendMessage = useCallback(() => {
     if (!inputMessage.trim() || isStreaming) return;
@@ -434,8 +545,8 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.4 }}
+          fitView={false}
+          fitViewOptions={{ padding: 0.6 }}
           className="orchestrator-canvas"
           proOptions={{ hideAttribution: true }}
           nodesDraggable={true}
@@ -448,14 +559,10 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           preventScrolling={false}
           minZoom={0.1}
           maxZoom={2}
-          defaultViewport={{ x: -200, y: -50, zoom: 0.5 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
           onInit={(instance) => {
             reactFlowRef.current = instance;
             console.log('React Flow initialized:', instance);
-            // Force fit view to ensure nodes are visible
-            setTimeout(() => {
-              instance.fitView({ padding: 0.4 });
-            }, 100);
           }}
           onWheel={(event) => {
             // Manual zoom handling
@@ -476,18 +583,11 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
             showInteractive={true}
             position="top-right"
           />
-          <MiniMap
-            nodeColor={(node) => {
-              if (node.type === 'supervisor') return '#60a5fa';
-              return '#34d399';
-            }}
-            maskColor="rgba(15, 20, 23, 0.8)"
-          />
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
-            size={0.5}
-            color="rgba(255, 255, 255, 0.1)"
+            size={1}
+            color="rgba(30, 58, 138, 0.6)"
           />
         </ReactFlow>
       </div>
@@ -529,6 +629,7 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         agent={selectedAgent}
+        dynamicAgentNodes={dynamicAgentNodes}
       />
     </div>
   );

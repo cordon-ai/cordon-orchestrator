@@ -13,6 +13,7 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const streamingRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Commented out unused streamResponse function
   // const streamResponse = async (messageId: string, fullResponse: string) => {
@@ -74,28 +75,55 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
 
   const stopStreaming = () => {
     streamingRef.current = false;
+    if (abortControllerRef.current) {
+      console.log('Aborting streaming request...');
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setChatState('idle');
     inputRef.current?.focus();
   };
 
   const handleProgressUpdate = (messageId: string, update: any) => {
     // Enhanced progress handling with detailed logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Enhanced progress update:', update.type, update.message?.substring(0, 100) || '', update);
-    }
+    console.log('🔍 Progress update received:', {
+      type: update.type,
+      message: update.message?.substring(0, 100) || '',
+      thinkingPhase: update.thinkingPhase,
+      tasks: update.tasks,
+      fullUpdate: update
+    });
 
     switch (update.type) {
       case 'thinking':
       case 'task_splitting':
       case 'thinking_phase':
+      case 'tasks_created':
         setChatState('selecting');
+        
+              // Handle task creation phase - support both thinking_phase and tasks_created
+              if ((update.thinkingPhase === 'task_creation' && update.tasks) || 
+                  (update.type === 'tasks_created' && update.tasks)) {
+                const tasks = update.tasks.map((task: any) => ({
+                  id: task.id,
+                  description: task.description,
+                  assigned_agent: task.assigned_agent,
+                  status: task.status,
+                  priority: 0
+                }));
+                console.log('📋 Initial tasks created:', tasks);
+                setCurrentTasks(tasks);
+                setShowTaskVisualization(true);
+              }
+        
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
             ? {
                 ...msg,
                 content: update.message || '🧠 Processing...',
                 isStreaming: true,
-                thinkingPhase: update.thinkingPhase || 'analyzing'
+                thinkingPhase: update.thinkingPhase || 'analyzing',
+                tasks: update.tasks || msg.tasks
               }
             : msg
         ));
@@ -147,13 +175,18 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         break;
 
       case 'task_started':
+        console.log('🚀 Task started:', update.task_id, update);
         setChatState('responding');
         setCurrentTaskId(update.task_id);
-        setCurrentTasks(prev => prev.map(task =>
-          task.id === update.task_id
-            ? { ...task, status: 'running', started_at: new Date().toISOString() }
-            : task
-        ));
+        setCurrentTasks(prev => {
+          const updated = prev.map(task =>
+            task.id === update.task_id
+              ? { ...task, status: 'running' as const, started_at: new Date().toISOString() }
+              : task
+          );
+          console.log('📋 Updated tasks after task_started:', updated);
+          return updated;
+        });
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
             ? {
@@ -220,17 +253,21 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         break;
 
       case 'task_completed':
-        console.log('Enhanced task completed update:', update);
-        setCurrentTasks(prev => prev.map(task =>
-          task.id === update.task_id ? {
-            ...task,
-            status: 'completed',
-            output: update.output || task.output || 'Task completed successfully',
-            completed_at: new Date().toISOString(),
-            duration: task.started_at ?
-              Math.round((new Date().getTime() - new Date(task.started_at).getTime()) / 1000) : undefined
-          } : task
-        ));
+        console.log('✅ Task completed:', update.task_id, update);
+        setCurrentTasks(prev => {
+          const updated = prev.map(task =>
+            task.id === update.task_id ? {
+              ...task,
+              status: 'completed' as const,
+              output: update.output || task.output || 'Task completed successfully',
+              completed_at: new Date().toISOString(),
+              duration: task.started_at ?
+                Math.round((new Date().getTime() - new Date(task.started_at).getTime()) / 1000) : undefined
+            } : task
+          );
+          console.log('📋 Updated tasks after task_completed:', updated);
+          return updated;
+        });
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
             ? {
@@ -304,6 +341,11 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
     setCurrentTaskId(undefined);
 
     try {
+      // Create abort controller for this request
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      streamingRef.current = true;
+
       // Create a preliminary agent response message for streaming
       const agentMessageId = (Date.now() + 1).toString();
       const agentMessage: Message = {
@@ -325,37 +367,50 @@ export const useChat = (sessionId: string, availableAgents: Agent[]) => {
         'user123',
         // Progress callback
         (update: any) => {
-          handleProgressUpdate(agentMessageId, update);
+          // Only process updates if streaming is still active
+          if (streamingRef.current) {
+            handleProgressUpdate(agentMessageId, update);
+          }
         },
         // Complete callback
         (response: string, agentName: string) => {
-          const agent = availableAgents.find(a => a.name === agentName);
-          setSelectedAgent(agent || null);
-          setChatState('idle');
-          inputRef.current?.focus();
+          if (streamingRef.current) {
+            const agent = availableAgents.find(a => a.name === agentName);
+            setSelectedAgent(agent || null);
+            setChatState('idle');
+            inputRef.current?.focus();
 
-          setMessages(prev => prev.map(msg =>
-            msg.id === agentMessageId
-              ? { ...msg, content: response, agentName: agentName, isStreaming: false }
-              : msg
-          ));
+            setMessages(prev => prev.map(msg =>
+              msg.id === agentMessageId
+                ? { ...msg, content: response, agentName: agentName, isStreaming: false }
+                : msg
+            ));
+          }
+          streamingRef.current = false;
+          abortControllerRef.current = null;
         },
         // Error callback
         (error: Error) => {
           console.error('Error sending message:', error);
           setChatState('idle');
+          streamingRef.current = false;
+          abortControllerRef.current = null;
 
           setMessages(prev => prev.map(msg =>
             msg.id === agentMessageId
               ? { ...msg, content: 'Error: Failed to get response', isStreaming: false }
               : msg
           ));
-        }
+        },
+        // Abort controller
+        abortController
       );
 
     } catch (error) {
       console.error('Error sending message:', error);
       setChatState('idle');
+      streamingRef.current = false;
+      abortControllerRef.current = null;
     }
   };
 

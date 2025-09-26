@@ -18,27 +18,53 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # Create streaming callback that yields chunks
         async def stream_generator():
-            progress_updates = []
-
-            # Progress callback to collect updates
-            def progress_callback(update):
-                progress_updates.append(update)
-
             # Stage 1: Initial setup
             yield sse({"type": "thinking", "message": "🔄 Starting task orchestration..."})
 
             # Stage 2: Route through orchestrator to get task-based response
-            response = await agent_service.route_request(
-                request.message,
-                request.user_id,
-                request.session_id,
-                progress_callback
+            # Create a queue to collect progress updates for real-time streaming
+            import asyncio
+            progress_queue = asyncio.Queue()
+            
+            # Progress callback that puts updates in the queue
+            def progress_callback(update):
+                try:
+                    progress_queue.put_nowait(update)
+                except asyncio.QueueFull:
+                    pass  # Skip if queue is full
+
+            # Start the orchestrator task
+            orchestrator_task = asyncio.create_task(
+                agent_service.route_request(
+                    request.message,
+                    request.user_id,
+                    request.session_id,
+                    progress_callback
+                )
             )
 
-            # Stream all collected progress updates
-            for update in progress_updates:
-                yield sse(update)
-                await asyncio.sleep(0.02)  # Faster streaming
+            # Stream progress updates in real-time while orchestrator is running
+            while not orchestrator_task.done():
+                try:
+                    # Wait for progress update with timeout
+                    update = await asyncio.wait_for(progress_queue.get(), timeout=0.1)
+                    yield sse(update)
+                    await asyncio.sleep(0.02)  # Faster streaming
+                except asyncio.TimeoutError:
+                    # No update available, continue waiting
+                    continue
+
+            # Get the final response
+            response = await orchestrator_task
+
+            # Stream any remaining progress updates
+            while not progress_queue.empty():
+                try:
+                    update = progress_queue.get_nowait()
+                    yield sse(update)
+                    await asyncio.sleep(0.02)
+                except asyncio.QueueEmpty:
+                    break
 
             # Extract response information
             if hasattr(response, 'metadata'):

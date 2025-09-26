@@ -10,13 +10,25 @@ interface AgentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   agent: AgentData | null;
+  dynamicAgentNodes?: Map<string, any>;
 }
 
-const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, agent }) => {
+const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, agent, dynamicAgentNodes }) => {
   const [activeTab, setActiveTab] = useState<'transcript' | 'json' | 'meta'>('transcript');
   const [copied, setCopied] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
+
+  // Resolve agent data from dynamic nodes if needed
+  const resolvedAgent = React.useMemo(() => {
+    if (agent && agent.id && dynamicAgentNodes) {
+      const dynamicNode = dynamicAgentNodes.get(agent.id);
+      if (dynamicNode) {
+        return dynamicNode.data as AgentData;
+      }
+    }
+    return agent;
+  }, [agent, dynamicAgentNodes]);
 
   // Add ResizeObserver error handling
   useEffect(() => {
@@ -45,12 +57,15 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
     }
   }, [isOpen]);
 
+  // Early return if no resolved agent (after all hooks)
+  if (!resolvedAgent) return null;
+
 
   const handleCopy = async () => {
-    if (!agent?.fullTranscript) return;
+    if (!resolvedAgent?.fullTranscript) return;
     
     try {
-      await navigator.clipboard.writeText(agent.fullTranscript);
+      await navigator.clipboard.writeText(resolvedAgent.fullTranscript);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -105,16 +120,16 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
           <div className="flex items-center justify-between p-6 border-b border-gray-600">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-cyan-500/20 border border-cyan-400/30 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <span className="text-cyan-400 text-lg font-medium">{agent.name.charAt(0)}</span>
+                <span className="text-cyan-400 text-lg font-medium">{resolvedAgent.name.charAt(0)}</span>
               </div>
               <div>
-                <h2 className="text-lg font-medium text-white tracking-tight">{agent.name}</h2>
+                <h2 className="text-lg font-medium text-white tracking-tight">{resolvedAgent.name}</h2>
                 <div className="flex items-center gap-2">
-                  {getStatusIcon(agent.status)}
-                  <span className="text-sm text-white/70">{getStatusText(agent.status)}</span>
-                  {agent.startTime && (
+                  {getStatusIcon(resolvedAgent.status)}
+                  <span className="text-sm text-white/70">{getStatusText(resolvedAgent.status)}</span>
+                  {resolvedAgent.startTime && (
                     <span className="text-sm text-white/50">
-                      • {agent.startTime.toLocaleTimeString()}
+                      • {resolvedAgent.startTime.toLocaleTimeString()}
                     </span>
                   )}
                 </div>
@@ -176,7 +191,7 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
                 className="h-full overflow-y-auto p-6 agent-details-modal"
                 style={{ maxHeight: 'calc(85vh - 140px)' }}
               >
-                {agent.fullTranscript ? (
+                {resolvedAgent.fullTranscript ? (
                   <div className="bg-black border border-gray-600 rounded-lg p-4">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -235,7 +250,7 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
                         }
                       }}
                     >
-                      {agent.fullTranscript}
+                      {resolvedAgent.fullTranscript}
                     </ReactMarkdown>
                   </div>
                 ) : (
@@ -260,22 +275,22 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-white/60">Name:</span>
-                        <span className="text-white/90">{agent.name}</span>
+                        <span className="text-white/90">{resolvedAgent.name}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-white/60">Status:</span>
-                        <span className="text-white/90 capitalize">{agent.status}</span>
+                        <span className="text-white/90 capitalize">{resolvedAgent.status}</span>
                       </div>
-                      {agent.startTime && (
+                      {resolvedAgent.startTime && (
                         <div className="flex justify-between">
                           <span className="text-white/60">Started:</span>
-                          <span className="text-white/90">{agent.startTime.toLocaleString()}</span>
+                          <span className="text-white/90">{resolvedAgent.startTime.toLocaleString()}</span>
                         </div>
                       )}
-                      {agent.endTime && (
+                      {resolvedAgent.endTime && (
                         <div className="flex justify-between">
                           <span className="text-white/60">Completed:</span>
-                          <span className="text-white/90">{agent.endTime.toLocaleString()}</span>
+                          <span className="text-white/90">{resolvedAgent.endTime.toLocaleString()}</span>
                         </div>
                       )}
                     </div>

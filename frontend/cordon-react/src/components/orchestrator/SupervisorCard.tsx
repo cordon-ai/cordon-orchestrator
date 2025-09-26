@@ -31,7 +31,31 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
   
   // Determine if supervisor is actively thinking (has running tasks or is streaming)
   const hasRunningTasks = tasks.some(task => task.status === 'running');
+  const hasCompletedTasks = tasks.some(task => task.status === 'done');
+  const hasPendingTasks = tasks.some(task => task.status === 'queued');
   const isActivelyThinking = isStreaming || hasRunningTasks;
+  
+  // Calculate dynamic height based on prompt length
+  const calculateCardHeight = () => {
+    const baseHeight = 200; // Base height for header and status sections
+    const promptHeight = prompt ? Math.max(60, Math.min(200, prompt.length * 0.8)) : 60; // Dynamic prompt height
+    const paddingHeight = 60; // Top and bottom padding
+    return Math.max(280, baseHeight + promptHeight + paddingHeight); // Minimum 280px, maximum ~460px
+  };
+  
+  const cardHeight = calculateCardHeight();
+  
+  // Calculate status section height to maintain proper proportions
+  const statusSectionHeight = Math.max(120, cardHeight - 200); // Ensure minimum status area
+  
+  // Determine current phase based on task states
+  const getCurrentPhase = () => {
+    if (tasks.length === 0) return 'Ready';
+    if (hasRunningTasks) return 'Executing';
+    if (hasCompletedTasks && !hasPendingTasks) return 'Completed';
+    if (hasPendingTasks) return 'Queued';
+    return 'Processing';
+  };
 
 
   const getStatusColor = (status: Task['status']) => {
@@ -55,9 +79,17 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
   };
 
   return (
-    <div className={`orchestrator-node w-[420px] h-[300px] px-6 pt-6 pb-10 transition-all duration-300 flex flex-col ${
-      isActivelyThinking ? 'ring-1 ring-blue-400/20 shadow-lg shadow-blue-400/10' : ''
-    }`} data-type="supervisor">
+    <div 
+      className={`orchestrator-node w-[420px] px-6 pt-6 pb-10 transition-all duration-300 ${
+        isActivelyThinking ? 'ring-1 ring-blue-400/20 shadow-lg shadow-blue-400/10' : ''
+      }`} 
+      data-type="supervisor"
+      style={{ 
+        height: `${cardHeight}px`,
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       <Handle
         type="source"
         position={Position.Bottom}
@@ -72,7 +104,7 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
         <div className="flex-1 min-w-0">
           <h3 className="text-white/95 font-medium text-lg tracking-tight">Supervisor</h3>
           <p className="text-white/50 text-sm">
-            {progress ? `${progress.phase} (${progress.current}/${progress.total})` : 'Task Orchestrator'}
+            {progress ? `${progress.phase} (${progress.current}/${progress.total})` : `${getCurrentPhase()} (${tasks.length} tasks)`}
           </p>
         </div>
         {isActivelyThinking && onStopThinking && (
@@ -91,9 +123,15 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
         )}
       </div>
 
-      {/* Request Section - Centered */}
+      {/* Request Section - Centered with Dynamic Height */}
       <div className="mb-4 flex-shrink-0">
-        <div className="p-3 bg-white/5 rounded-lg max-h-20 overflow-y-auto text-center">
+        <div 
+          className="p-3 bg-white/5 rounded-lg overflow-y-auto text-center"
+          style={{ 
+            height: `${Math.max(60, Math.min(200, prompt ? prompt.length * 0.8 : 60))}px`,
+            minHeight: '60px'
+          }}
+        >
           <div className="text-sm text-white/100 mb-1 font-medium">Request:</div>
           <div className="text-sm text-white/80 leading-relaxed break-words">
             {prompt || 'No request'}
@@ -102,8 +140,9 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
       </div>
 
       {/* Current Status Section - Main Display Area */}
-      <div className="flex-1 flex flex-col items-center justify-center" style={{ 
-        minHeight: '80px'
+      <div className="flex flex-col items-center justify-center" style={{ 
+        height: `${statusSectionHeight}px`,
+        minHeight: '120px'
       }}>
         {isActivelyThinking ? (
           <div className="flex flex-col items-center gap-2" style={{ 

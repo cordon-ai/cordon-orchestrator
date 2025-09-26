@@ -114,7 +114,7 @@ const App: React.FC = () => {
           marginLeft: sidebarCollapsed ? '4rem' : '18rem',
           transition: 'margin-left 0.3s ease-in-out',
           height: '100vh',
-          overflow: 'hidden'
+          overflow: currentPage === 'chat' ? 'hidden' : 'auto'
         }}
       >
         {currentPage === 'chat' && (
