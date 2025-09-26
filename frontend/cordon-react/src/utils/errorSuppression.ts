@@ -1,3 +1,21 @@
+// Immediate global suppression - runs as soon as this file loads
+if (typeof window !== 'undefined') {
+  const originalError = window.onerror;
+  window.onerror = (message, source, lineno, colno, error) => {
+    if (typeof message === 'string' && (
+        message.includes('ResizeObserver') ||
+        message.includes('loop completed with undelivered notifications') ||
+        message.includes('loop limit exceeded'))) {
+      return true; // Suppress the error
+    }
+    if (originalError) {
+      return originalError(message, source, lineno, colno, error);
+    }
+    return false;
+  };
+
+}
+
 // Enhanced ResizeObserver error suppression utility
 export const suppressResizeObserverErrors = () => {
   // Suppress console.error messages
@@ -6,10 +24,24 @@ export const suppressResizeObserverErrors = () => {
     const message = args.join(' ');
     if (message.includes('ResizeObserver loop completed with undelivered notifications') ||
         message.includes('ResizeObserver loop limit exceeded') ||
-        message.includes('ResizeObserver')) {
+        message.includes('ResizeObserver') ||
+        message.includes('ResizeObserver loop')) {
       return; // Suppress these specific errors
     }
     originalConsoleError.apply(console, args);
+  };
+
+  // Also suppress console.warn for ResizeObserver
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    const message = args.join(' ');
+    if (message.includes('ResizeObserver loop completed with undelivered notifications') ||
+        message.includes('ResizeObserver loop limit exceeded') ||
+        message.includes('ResizeObserver') ||
+        message.includes('ResizeObserver loop')) {
+      return; // Suppress these specific warnings
+    }
+    originalConsoleWarn.apply(console, args);
   };
 
   // Suppress window error events
@@ -42,6 +74,7 @@ export const suppressResizeObserverErrors = () => {
   // Return cleanup function
   return () => {
     console.error = originalConsoleError;
+    console.warn = originalConsoleWarn;
     window.removeEventListener('error', handleError);
     window.removeEventListener('unhandledrejection', handleUnhandledRejection);
   };

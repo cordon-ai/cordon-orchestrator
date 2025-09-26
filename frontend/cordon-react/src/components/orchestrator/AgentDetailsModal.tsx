@@ -16,6 +16,7 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
   const [activeTab, setActiveTab] = useState<'transcript' | 'json' | 'meta'>('transcript');
   const [copied, setCopied] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const metaRef = useRef<HTMLDivElement>(null);
 
   // Add ResizeObserver error handling
   useEffect(() => {
@@ -31,11 +32,19 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
     return () => window.removeEventListener('error', handleError);
   }, []);
 
+  // Set scroll position to top when modal opens (no animation)
   useEffect(() => {
-    if (isOpen && transcriptRef.current) {
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    if (isOpen) {
+      // Immediately set scroll position to top without animation
+      if (transcriptRef.current) {
+        transcriptRef.current.scrollTop = 0;
+      }
+      if (metaRef.current) {
+        metaRef.current.scrollTop = 0;
+      }
     }
-  }, [isOpen, agent?.fullTranscript]);
+  }, [isOpen]);
+
 
   const handleCopy = async () => {
     if (!agent?.fullTranscript) return;
@@ -46,6 +55,16 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
+    }
+  };
+
+  const handleTabChange = (tab: 'transcript' | 'meta') => {
+    setActiveTab(tab);
+    // Set scroll position to top immediately when switching tabs
+    if (tab === 'transcript' && transcriptRef.current) {
+      transcriptRef.current.scrollTop = 0;
+    } else if (tab === 'meta' && metaRef.current) {
+      metaRef.current.scrollTop = 0;
     }
   };
 
@@ -75,18 +94,18 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="agent-details-modal-container bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="absolute inset-0 flex items-center justify-center p-8">
-        <div className="bg-gray-800 border border-gray-600 rounded-2xl shadow-2xl w-full max-w-4xl h-[70vh] flex flex-col">
+      <div className="agent-details-modal-container">
+        <div className="bg-gray-700/95 backdrop-blur-sm border border-gray-600 rounded-2xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col"> it 
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-600">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 border border-blue-400/30 rounded-xl flex items-center justify-center">
-                <span className="text-blue-400 text-lg font-medium">{agent.name.charAt(0)}</span>
+              <div className="w-12 h-12 bg-cyan-500/20 border border-cyan-400/30 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <span className="text-cyan-400 text-lg font-medium">{agent.name.charAt(0)}</span>
               </div>
               <div>
                 <h2 className="text-lg font-medium text-white tracking-tight">{agent.name}</h2>
@@ -105,16 +124,16 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-sm font-medium text-white/80 hover:text-white transition-all"
+                className="flex items-center gap-2 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/50 rounded-lg text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-all shadow-lg shadow-cyan-500/20"
               >
                 {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Copied!' : 'Copy'}
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-cyan-500/10 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-white/60" />
+                <X className="w-5 h-5 text-cyan-400/60 hover:text-cyan-400" />
               </button>
             </div>
           </div>
@@ -122,52 +141,40 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
           {/* Tabs */}
           <div className="flex border-b border-gray-600">
             <button
-              onClick={() => setActiveTab('transcript')}
+              onClick={() => handleTabChange('transcript')}
               className={`px-6 py-3 text-sm font-medium transition-colors relative ${
                 activeTab === 'transcript'
-                  ? 'text-blue-400'
-                  : 'text-white/60 hover:text-white/80'
+                  ? 'text-cyan-400'
+                  : 'text-white/60 hover:text-cyan-400/80'
               }`}
             >
               Transcript
               {activeTab === 'transcript' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400"></div>
               )}
             </button>
             <button
-              onClick={() => setActiveTab('json')}
-              className={`px-6 py-3 text-sm font-medium transition-colors relative ${
-                activeTab === 'json'
-                  ? 'text-blue-400'
-                  : 'text-white/60 hover:text-white/80'
-              }`}
-            >
-              JSON
-              {activeTab === 'json' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('meta')}
+              onClick={() => handleTabChange('meta')}
               className={`px-6 py-3 text-sm font-medium transition-colors relative ${
                 activeTab === 'meta'
-                  ? 'text-blue-400'
-                  : 'text-white/60 hover:text-white/80'
+                  ? 'text-cyan-400'
+                  : 'text-white/60 hover:text-cyan-400/80'
               }`}
             >
               Meta
               {activeTab === 'meta' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400"></div>
               )}
             </button>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden">
             {activeTab === 'transcript' && (
               <div
                 ref={transcriptRef}
-                className="h-full overflow-y-auto p-6"
+                className="h-full overflow-y-auto p-6 agent-details-modal"
+                style={{ maxHeight: 'calc(85vh - 140px)' }}
               >
                 {agent.fullTranscript ? (
                   <div className="bg-black border border-gray-600 rounded-lg p-4">
@@ -240,30 +247,13 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
               </div>
             )}
 
-            {activeTab === 'json' && (
-              <div className="h-full overflow-y-auto p-6">
-                {agent.structuredOutput ? (
-                  <div className="bg-black border border-gray-600 rounded-lg p-4">
-                    <SyntaxHighlighter
-                      style={vscDarkPlus as any}
-                      language="json"
-                      PreTag="div"
-                      className="rounded-md"
-                    >
-                      {JSON.stringify(agent.structuredOutput, null, 2)}
-                    </SyntaxHighlighter>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-white/60">
-                    <Square className="w-12 h-12 mb-4" />
-                    <p>No structured output available</p>
-                  </div>
-                )}
-              </div>
-            )}
 
             {activeTab === 'meta' && (
-              <div className="h-full overflow-y-auto p-6">
+              <div 
+                ref={metaRef}
+                className="h-full overflow-y-auto p-6 agent-details-modal"
+                style={{ maxHeight: 'calc(85vh - 140px)' }}
+              >
                 <div className="space-y-4">
                   <div className="bg-black border border-gray-600 rounded-lg p-4">
                     <h3 className="text-sm font-medium text-white mb-3">Agent Information</h3>

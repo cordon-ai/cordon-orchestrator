@@ -15,10 +15,18 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
+    // Don't show error boundary for ResizeObserver errors
+    if (error.message && error.message.includes('ResizeObserver')) {
+      return { hasError: false };
+    }
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Suppress ResizeObserver errors
+    if (error.message && error.message.includes('ResizeObserver')) {
+      return;
+    }
     console.error('Uncaught error:', error, errorInfo);
   }
 

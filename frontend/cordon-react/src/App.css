@@ -828,7 +828,7 @@ body {
 }
 
 .orchestrator-node {
-  transition: all 0.2s ease-in-out;
+  transition: none !important;
   font-family: inherit;
   border: 1px solid var(--border);
   background: var(--card);
@@ -910,6 +910,52 @@ body {
   background: rgba(59, 130, 246, 1);
 }
 
+/* Custom scrollbar for agent details modal */
+.agent-details-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.agent-details-modal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.agent-details-modal::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.6);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.agent-details-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+/* Agent details modal styling */
+.agent-details-modal {
+  background: rgba(55, 65, 81, 0.95) !important; /* Lighter background for content areas */
+  backdrop-filter: blur(8px);
+}
+
+/* Ensure entire modal has consistent background */
+.agent-details-modal-container > div {
+  background: rgba(55, 65, 81, 0.95) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Ensure modal is properly centered and above sidebar */
+.agent-details-modal-container {
+  z-index: 50 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem 1rem 1rem 35% !important; /* Better centering for orchestrator canvas */
+}
+
 /* Ensure internal elements don't exceed card width */
 .orchestrator-node * {
   max-width: 100%;
@@ -950,6 +996,11 @@ body {
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
+}
+
+/* ResizeObserver prevention - less aggressive */
+.react-flow__node {
+  contain: layout !important;
 }
 
 /* Specific constraints for agent result text */

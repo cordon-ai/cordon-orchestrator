@@ -18,6 +18,36 @@ import './App.css';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [sessionId] = useState(() => `session_${Math.random().toString(36).substr(2, 9)}`);
+
+  // Aggressive ResizeObserver error suppression
+  useEffect(() => {
+    const cleanup = suppressResizeObserverErrors();
+    
+    // Additional global error handler
+    const handleError = (event: ErrorEvent) => {
+      if (event.message && event.message.includes('ResizeObserver')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason && event.reason.message && event.reason.message.includes('ResizeObserver')) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      cleanup();
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { backendConnected } = useBackendConnection();
@@ -65,10 +95,6 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    // Suppress ResizeObserver errors globally
-    return suppressResizeObserverErrors();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-gray-900 flex">
