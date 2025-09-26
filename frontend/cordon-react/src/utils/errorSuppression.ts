@@ -103,3 +103,36 @@ const globalRejectionHandler = (event: PromiseRejectionEvent) => {
 // Apply global suppression immediately
 window.addEventListener('error', globalErrorHandler);
 window.addEventListener('unhandledrejection', globalRejectionHandler);
+
+// Aggressive ResizeObserver error suppression
+const originalResizeObserver = window.ResizeObserver;
+if (originalResizeObserver) {
+  window.ResizeObserver = class extends originalResizeObserver {
+    constructor(callback: ResizeObserverCallback) {
+      const wrappedCallback: ResizeObserverCallback = (entries, observer) => {
+        try {
+          callback(entries, observer);
+        } catch (error) {
+          // Silently ignore ResizeObserver errors
+          if (error instanceof Error && error.message.includes('ResizeObserver')) {
+            return;
+          }
+          throw error;
+        }
+      };
+      super(wrappedCallback);
+    }
+  };
+}
+
+// Suppress all ResizeObserver console errors
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('ResizeObserver') || 
+      message.includes('loop completed with undelivered notifications') ||
+      message.includes('loop limit exceeded')) {
+    return; // Suppress these errors
+  }
+  originalConsoleError.apply(console, args);
+};

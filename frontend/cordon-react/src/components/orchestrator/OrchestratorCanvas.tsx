@@ -54,6 +54,15 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const reactFlowRef = useRef<ReactFlowInstance>(null);
 
+  // Stop thinking function
+  const handleStopThinking = () => {
+    setFunctionOutput('');
+    setCurrentStep('');
+    // Clear progress
+    setSupervisorProgress(undefined);
+    // Note: isStreaming and currentTasks are controlled by parent component
+  };
+
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -312,7 +321,8 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
         prompt: messages.find(m => m.role === 'user')?.content,
         functionOutput,
         currentStep,
-        progress: supervisorProgress
+        progress: supervisorProgress,
+        onStopThinking: handleStopThinking
       },
     };
 
