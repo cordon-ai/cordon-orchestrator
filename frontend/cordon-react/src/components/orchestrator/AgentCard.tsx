@@ -108,9 +108,9 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
   const firstLetter = name.charAt(0).toUpperCase();
 
   return (
-    <div className={`orchestrator-node w-[280px] h-[200px] p-4 transition-all duration-500 overflow-hidden ${
+    <div className={`orchestrator-node w-[340px] h-[240px] p-4 transition-all duration-500 overflow-hidden flex flex-col ${
       isSpawning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'
-    } ${status === 'running' ? `shadow-lg ${getStatusGlow(status)}` : ''}`} data-type="agent">
+    } ${status === 'running' ? `shadow-lg ${getStatusGlow(status)}` : ''}`} data-type="agent" style={{ width: '340px', height: '240px', minWidth: '340px', maxWidth: '340px', minHeight: '240px', maxHeight: '240px' }}>
       <Handle
         type="target"
         position={Position.Top}
@@ -118,7 +118,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
       />
 
       <div className="flex flex-col h-full">
-        <div className="flex-shrink-0 flex items-start gap-3 mb-3">
+        <div className="flex-shrink-0 flex items-start gap-2 mb-2">
           <div className={`w-8 h-8 rounded-lg ${agentColors.bg} border ${agentColors.border} flex items-center justify-center flex-shrink-0 relative ${
             status === 'running' ? 'animate-pulse' : ''
           }`}>
@@ -148,50 +148,55 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col space-y-2">
-          {taskDescription && (
-            <div className="flex-shrink-0 p-2 bg-white/5 border border-white/10 rounded-md">
-              <div className="text-xs text-white/40 mb-1">Task:</div>
-              <div className="text-xs text-white/70 leading-relaxed">
-                <div className="max-h-8 overflow-y-auto break-words">{taskDescription}</div>
+        <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
+          {/* Task Description - Always rendered with fixed height */}
+          <div className="flex-shrink-0 p-2 bg-white/5 border border-white/10 rounded-md h-12">
+            <div className="text-xs text-white/40 mb-0.5">Task:</div>
+            <div className="text-xs text-white/70 leading-relaxed h-6 overflow-y-auto break-words">
+              {taskDescription || "No task assigned"}
+            </div>
+          </div>
+
+          {/* Progress - Always rendered with fixed height */}
+          <div className="flex-shrink-0 p-2 bg-blue-400/10 border border-blue-400/20 rounded-md h-12">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="text-xs text-blue-400 font-medium">
+                {progress?.phase || "Waiting"}
+              </div>
+              <div className="text-xs text-blue-400">
+                {progress ? `${progress.current}/${progress.total}` : "0/0"}
               </div>
             </div>
-          )}
-
-          {progress && status === 'running' && (
-            <div className="flex-shrink-0 p-2 bg-blue-400/10 border border-blue-400/20 rounded-md">
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-xs text-blue-400 font-medium">{progress.phase}</div>
-                <div className="text-xs text-blue-400">{progress.current}/{progress.total}</div>
-              </div>
-              <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-400 rounded-full transition-all duration-300"
-                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                ></div>
-              </div>
+            <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-400 rounded-full transition-all duration-300"
+                style={{ width: progress ? `${(progress.current / progress.total) * 100}%` : '0%' }}
+              ></div>
             </div>
-          )}
+          </div>
 
-          <div className={`flex-1 min-h-0 p-2.5 rounded-md border ${
+          {/* Main Content - Flexible height with max constraint */}
+          <div className={`flex-1 min-h-0 p-2 rounded-md border ${
             status === 'running' ? 'bg-blue-400/5 border-blue-400/20' :
             status === 'done' ? 'bg-emerald-400/5 border-emerald-400/20' :
             status === 'error' ? 'bg-red-400/5 border-red-400/20' :
             'bg-white/5 border-white/10'
           }`}>
-            <div className="text-xs text-white/40 mb-1">
+            <div className="text-xs text-white/40 mb-0.5">
               {status === 'running' ? 'Processing:' :
                status === 'done' ? 'Result:' :
                status === 'error' ? 'Error:' : 'Status:'}
             </div>
-            <div className="text-xs text-white/70 leading-relaxed h-full overflow-y-auto break-words">{preview}</div>
+            <div className="text-xs text-white/70 leading-relaxed h-full overflow-y-auto break-words">
+              {preview || "No output yet"}
+            </div>
           </div>
         </div>
 
-        <div className="flex-shrink-0 flex items-center gap-1.5 mt-2">
+        <div className="flex-shrink-0 flex items-center gap-1 mt-1.5">
         <button
           onClick={() => onExpand?.(id)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 border rounded-md text-xs font-medium transition-all duration-200 ${
+          className={`flex items-center gap-1 px-2 py-1 border rounded-md text-xs font-medium transition-all duration-200 ${
             status === 'running'
               ? 'bg-blue-400/10 hover:bg-blue-400/20 border-blue-400/30 text-blue-400 hover:text-blue-300'
               : status === 'done'
@@ -202,11 +207,11 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
           }`}
         >
           <Expand className="w-3 h-3" />
-          View Details
+          Details
         </button>
 
         {status === 'done' && (
-          <button className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-400/30 hover:border-emerald-400/40 rounded-md text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-all duration-200">
+          <button className="flex items-center gap-1 px-2 py-1 bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-400/30 hover:border-emerald-400/40 rounded-md text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-all duration-200">
             <Copy className="w-3 h-3" />
             Copy
           </button>

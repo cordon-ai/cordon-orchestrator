@@ -756,6 +756,25 @@ body {
   box-shadow: 0 0 0 1px var(--blue-400);
 }
 
+/* Prevent React Flow from overriding supervisor card dimensions */
+.react-flow__node[data-id="supervisor"] {
+  width: 420px !important;
+  height: 280px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  min-height: 280px !important;
+  max-height: 280px !important;
+}
+
+.react-flow__node[data-id="supervisor"] .orchestrator-node {
+  width: 420px !important;
+  height: 280px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  min-height: 280px !important;
+  max-height: 280px !important;
+}
+
 /* React Flow handle styles */
 .react-flow__handle {
   width: 12px;
@@ -837,12 +856,47 @@ body {
 
 /* Additional width constraints for agent cards */
 .orchestrator-node[data-type="agent"] {
-  --node-width: 280px;
+  --node-width: 340px;
+  width: 340px !important;
+  height: 240px !important;
+  min-width: 340px !important;
+  max-width: 340px !important;
+  min-height: 240px !important;
+  max-height: 240px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }
 
 /* Additional width constraints for supervisor cards */
 .orchestrator-node[data-type="supervisor"] {
   --node-width: 420px;
+  width: 420px !important;
+  height: 280px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  min-height: 280px !important;
+  max-height: 280px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+/* Custom scrollbar for supervisor card */
+.orchestrator-node[data-type="supervisor"]::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.orchestrator-node[data-type="supervisor"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Ensure internal elements don't exceed card width */

@@ -54,16 +54,16 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
   };
 
   return (
-    <div className={`orchestrator-node w-[340px] h-[280px] p-4 transition-all duration-300 overflow-hidden ${
+    <div className={`orchestrator-node w-[420px] h-[280px] p-6 transition-all duration-300 overflow-y-auto flex flex-col ${
       isActivelyThinking ? 'ring-1 ring-blue-400/20 shadow-lg shadow-blue-400/10' : ''
-    }`} data-type="supervisor">
+    }`} data-type="supervisor" style={{ width: '420px', height: '280px', minWidth: '420px', maxWidth: '420px', minHeight: '280px', maxHeight: '280px' }}>
       <Handle
         type="source"
         position={Position.Bottom}
         className="w-3 h-3 !bg-white/10 !border-white/20"
       />
 
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-3 flex-shrink-0">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center relative transition-all duration-300 ${
           isActivelyThinking 
             ? 'bg-blue-400/20 border border-blue-400/40 shadow-lg shadow-blue-400/20' 
@@ -99,92 +99,89 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
         )}
       </div>
 
-      <div className="flex flex-col h-full space-y-3">
-        {prompt && (
-          <div className="flex-shrink-0 p-3 bg-white/5 border border-white/10 rounded-lg">
-            <div className="text-xs text-white/40 mb-1">Request:</div>
-            <div className="text-xs text-white/80 leading-relaxed overflow-hidden">
-              <div className="max-h-8 overflow-y-auto break-words">{prompt}</div>
-            </div>
+      <div className="flex flex-col flex-1 min-h-0 space-y-3">
+        <div className="flex-shrink-0 p-3 bg-white/5 border border-white/10 rounded-lg h-16">
+          <div className="text-xs text-white/40 mb-1">Request:</div>
+          <div className="text-xs text-white/80 leading-relaxed overflow-hidden h-8">
+            <div className="h-full overflow-y-auto break-words">{prompt || 'No request'}</div>
           </div>
-        )}
+        </div>
 
         {/* Current Status/Function Output */}
-        {(currentStep || functionOutput) && (
-          <div className={`flex-shrink-0 p-3 border rounded-lg transition-all duration-300 ${
-            isActivelyThinking
-              ? 'bg-gradient-to-r from-blue-400/15 to-purple-400/15 border-blue-400/30 shadow-lg shadow-blue-400/10'
-              : 'bg-gradient-to-r from-blue-400/10 to-purple-400/10 border-blue-400/20'
-          }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-2 h-2 bg-blue-400 rounded-full ${
-                isActivelyThinking ? 'animate-pulse' : ''
-              }`}></div>
-              <span className="text-xs text-blue-400 font-medium">
-                {isActivelyThinking ? 'Processing' : 'Status'}
-              </span>
-            </div>
-            <div className="text-sm text-white/90 leading-relaxed">
-              <div className="max-h-10 overflow-y-auto break-words">{currentStep || functionOutput || 'Ready to process requests'}</div>
-            </div>
+        <div className={`flex-shrink-0 p-3 border rounded-lg transition-all duration-300 h-20 ${
+          isActivelyThinking
+            ? 'bg-gradient-to-r from-blue-400/15 to-purple-400/15 border-blue-400/30 shadow-lg shadow-blue-400/10'
+            : 'bg-gradient-to-r from-blue-400/10 to-purple-400/10 border-blue-400/20'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-2 h-2 bg-blue-400 rounded-full ${
+              isActivelyThinking ? 'animate-pulse' : ''
+            }`}></div>
+            <span className="text-xs text-blue-400 font-medium">
+              {isActivelyThinking ? 'Processing' : 'Status'}
+            </span>
           </div>
-        )}
+          <div className="text-sm text-white/90 leading-relaxed h-10">
+            <div className="h-full overflow-y-auto break-words">{currentStep || functionOutput || 'Ready to process requests'}</div>
+          </div>
+        </div>
 
         {/* Enhanced Task Display */}
-        {tasks.length > 0 && (
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-shrink-0 flex items-center justify-between mb-2">
-              <div className="text-xs text-white/40 font-medium">Active Tasks ({tasks.length}):</div>
-              <div className="text-xs text-white/50">
-                {tasks.filter(t => t.status === 'done').length}/{tasks.length} completed
-              </div>
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-shrink-0 flex items-center justify-between mb-2">
+            <div className="text-xs text-white/40 font-medium">Active Tasks ({tasks.length}):</div>
+            <div className="text-xs text-white/50">
+              {tasks.filter(t => t.status === 'done').length}/{tasks.length} completed
             </div>
-            <div className="flex-1 overflow-y-auto space-y-1.5">
-              {tasks.slice(-4).map((task, index) => (
-                <div key={task.id} className="flex items-center gap-2.5 p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{
-                      backgroundColor: getStatusColor(task.status),
-                      boxShadow: task.status === 'running' ? `0 0 6px ${getStatusColor(task.status)}` : 'none'
-                    }}
-                  />
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="text-xs text-white/80 font-medium truncate">
-                      {task.agent}
-                    </div>
-                    {task.summary && (
-                      <div className="text-xs text-white/50 mt-0.5 leading-relaxed">
-                        <div className="max-h-6 overflow-y-auto break-words">{task.summary}</div>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-1.5">
+            {tasks.length > 0 ? (
+              <>
+                {tasks.slice(-4).map((task, index) => (
+                  <div key={task.id} className="flex items-center gap-2.5 p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors">
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: getStatusColor(task.status),
+                        boxShadow: task.status === 'running' ? `0 0 6px ${getStatusColor(task.status)}` : 'none'
+                      }}
+                    />
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="text-xs text-white/80 font-medium truncate">
+                        {task.agent}
                       </div>
-                    )}
+                      {task.summary && (
+                        <div className="text-xs text-white/50 mt-0.5 leading-relaxed">
+                          <div className="max-h-6 overflow-y-auto break-words">{task.summary}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${
+                      task.status === 'running' ? 'bg-blue-400/20 text-blue-400' :
+                      task.status === 'done' ? 'bg-emerald-400/20 text-emerald-400' :
+                      task.status === 'error' ? 'bg-red-400/20 text-red-400' :
+                      'bg-white/10 text-white/50'
+                    }`}>
+                      {getStatusText(task.status)}
+                    </div>
                   </div>
-                  <div className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${
-                    task.status === 'running' ? 'bg-blue-400/20 text-blue-400' :
-                    task.status === 'done' ? 'bg-emerald-400/20 text-emerald-400' :
-                    task.status === 'error' ? 'bg-red-400/20 text-red-400' :
-                    'bg-white/10 text-white/50'
-                  }`}>
-                    {getStatusText(task.status)}
+                ))}
+                {tasks.length > 4 && (
+                  <div className="text-xs text-white/40 text-center pt-1 border-t border-white/10">
+                    +{tasks.length - 4} more tasks
                   </div>
-                </div>
-              ))}
-              {tasks.length > 4 && (
-                <div className="text-xs text-white/40 text-center pt-1 border-t border-white/10">
-                  +{tasks.length - 4} more tasks
-                </div>
-              )}
-            </div>
+                )}
+              </>
+            ) : (
+              <div className="text-xs text-white/50 py-4 text-center border border-dashed border-white/20 rounded-lg">
+                <Settings className="w-6 h-6 text-white/30 mx-auto mb-2" />
+                <div>Ready to orchestrate tasks</div>
+                <div className="text-white/40 mt-1">Send a request to begin</div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {tasks.length === 0 && !functionOutput && !prompt && !currentStep && (
-          <div className="text-xs text-white/50 py-4 text-center border border-dashed border-white/20 rounded-lg">
-            <Settings className="w-6 h-6 text-white/30 mx-auto mb-2" />
-            <div>Ready to orchestrate tasks</div>
-            <div className="text-white/40 mt-1">Send a request to begin</div>
-          </div>
-        )}
       </div>
     </div>
   );
