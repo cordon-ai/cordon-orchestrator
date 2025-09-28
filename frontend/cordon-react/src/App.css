@@ -996,13 +996,13 @@ body {
 
 /* Additional width constraints for agent cards */
 .orchestrator-node[data-type="agent"] {
-  --node-width: 340px;
-  width: 340px !important;
-  height: 240px !important;
-  min-width: 340px !important;
-  max-width: 340px !important;
-  min-height: 240px !important;
-  max-height: 240px !important;
+  --node-width: 360px;
+  width: 360px !important;
+  height: 300px !important;
+  min-width: 360px !important;
+  max-width: 360px !important;
+  min-height: 300px !important;
+  max-height: 300px !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
   background: rgba(31, 41, 55, 0.8) !important;
@@ -1078,8 +1078,38 @@ body {
   backdrop-filter: blur(8px);
 }
 
+/* Tab buttons in agent details modal */
+.agent-details-modal-container button[class*="px-6 py-3"] {
+  background-color: rgb(75, 85, 99) !important; /* gray-600 */
+  box-shadow: none !important;
+  color: rgb(209, 213, 219) !important; /* gray-300 - lighter text */
+}
+
+.agent-details-modal-container button[class*="px-6 py-3"]:hover {
+  background-color: rgb(107, 114, 128) !important; /* gray-500 */
+  color: rgb(229, 231, 235) !important; /* gray-200 - even lighter on hover */
+}
+
+/* Active/selected tab styling */
+.agent-details-modal-container button[class*="px-6 py-3"][class*="text-cyan-400"] {
+  background-color: rgb(55, 65, 81) !important; /* gray-700 - darker background */
+  color: rgb(34, 211, 238) !important; /* cyan-400 - cyan text */
+}
+
+.agent-details-modal-container button[class*="px-6 py-3"][class*="text-cyan-400"]:hover {
+  background-color: rgb(55, 65, 81) !important; /* gray-700 - keep darker on hover */
+  color: rgb(34, 211, 238) !important; /* cyan-400 - keep cyan on hover */
+}
+
+/* Active tab indicator - cyan bottom border */
+.agent-details-modal-container button[class*="px-6 py-3"] div[class*="absolute bottom-0"] {
+  background-color: rgb(34, 211, 238) !important; /* cyan-400 */
+  height: 2px !important; /* Make it slightly thicker */
+  box-shadow: 0 0 4px rgba(34, 211, 238, 0.5) !important; /* Add a subtle glow */
+}
+
 /* Ensure entire modal has consistent background */
-.agent-details-modal-container > div {
+.agent-details-modal-container > div:not(.agent-modal-gradient-border) {
   background: rgba(17, 24, 39, 0.95) !important;
   backdrop-filter: blur(8px);
 }
@@ -1095,7 +1125,23 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 1rem 1rem 1rem 35% !important; /* Better centering for orchestrator canvas */
+  padding: 1rem 1rem 1rem 20% !important;
+  overflow-y: auto !important;
+}
+
+/* Gradient border for agent modal */
+.agent-modal-gradient-border {
+  background: linear-gradient(135deg, #0891b2 0%, #3b82f6 100%) !important;
+  padding: 3px !important;
+  border-radius: 1.5rem !important;
+}
+
+.agent-modal-gradient-border > div {
+  background: rgba(55, 65, 81, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 1.5rem !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Ensure internal elements don't exceed card width */

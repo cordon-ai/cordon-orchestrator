@@ -108,9 +108,9 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
   const firstLetter = name.charAt(0).toUpperCase();
 
   return (
-    <div className={`orchestrator-node w-[340px] h-[240px] p-4 transition-all duration-500 overflow-hidden flex flex-col ${
+    <div className={`orchestrator-node w-[360px] h-[300px] p-4 transition-all duration-500 overflow-hidden flex flex-col ${
       isSpawning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'
-    } ${status === 'running' ? `shadow-lg ${getStatusGlow(status)}` : ''}`} data-type="agent" style={{ width: '340px', height: '240px', minWidth: '340px', maxWidth: '340px', minHeight: '240px', maxHeight: '240px' }}>
+    } ${status === 'running' ? `shadow-lg ${getStatusGlow(status)}` : ''}`} data-type="agent" style={{ width: '360px', height: '300px', minWidth: '360px', maxWidth: '360px', minHeight: '300px', maxHeight: '300px', borderRadius: '15px' }}>
       <Handle
         type="target"
         position={Position.Top}
@@ -148,18 +148,18 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
+        <div className="flex-1 min-h-0 flex flex-col space-y-2">
           {/* Task Description - Always rendered with fixed height */}
-          <div className="flex-shrink-0 p-2 bg-white/5 border border-white/10 h-12" style={{borderRadius: '15px'}}>
-            <div className="text-xs text-white/40 mb-0.5">Task:</div>
-            <div className="text-xs text-white/70 leading-relaxed h-6 overflow-y-auto break-words">
+          <div className="flex-shrink-0 p-3 bg-white/5 h-16" style={{borderRadius: '12px'}}>
+            <div className="text-xs text-white/40 mb-1.5">Task:</div>
+            <div className="text-xs text-white/70 leading-relaxed h-8 overflow-y-auto break-words">
               {taskDescription || "No task assigned"}
             </div>
           </div>
 
           {/* Progress - Always rendered with fixed height */}
-          <div className="flex-shrink-0 p-2 bg-blue-400/10 border border-blue-400/20 h-12" style={{borderRadius: '15px'}}>
-            <div className="flex items-center justify-between mb-0.5">
+          <div className="flex-shrink-0 p-3 bg-blue-400/10 h-16" style={{borderRadius: '12px'}}>
+            <div className="flex items-center justify-between mb-1.5">
               <div className="text-xs text-blue-400 font-medium">
                 {progress?.phase || "Waiting"}
               </div>
@@ -167,7 +167,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
                 {progress ? `${progress.current}/${progress.total}` : "0/0"}
               </div>
             </div>
-            <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-400 rounded-full transition-all duration-300"
                 style={{ width: progress ? `${(progress.current / progress.total) * 100}%` : '0%' }}
@@ -176,13 +176,13 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
           </div>
 
           {/* Main Content - Flexible height with max constraint */}
-          <div className={`flex-1 min-h-0 p-2 border ${
-            status === 'running' ? 'bg-blue-400/5 border-blue-400/20' :
-            status === 'done' ? 'bg-emerald-400/5 border-emerald-400/20' :
-            status === 'error' ? 'bg-red-400/5 border-red-400/20' :
-            'bg-white/5 border-white/10'
-          }`} style={{borderRadius: '15px'}}>
-            <div className="text-xs text-white/40 mb-0.5">
+          <div className={`flex-1 min-h-0 p-3 ${
+            status === 'running' ? 'bg-blue-400/5' :
+            status === 'done' ? 'bg-emerald-400/5' :
+            status === 'error' ? 'bg-red-400/5' :
+            'bg-white/5'
+          }`} style={{borderRadius: '12px'}}>
+            <div className="text-xs text-white/40 mb-1.5">
               {status === 'running' ? 'Processing:' :
                status === 'done' ? 'Result:' :
                status === 'error' ? 'Error:' : 'Status:'}
@@ -193,34 +193,25 @@ const AgentCard: React.FC<AgentCardProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="flex-shrink-0 flex items-center gap-1 mt-1.5">
+        <div className="flex-shrink-0 flex items-center gap-1.5 mt-3">
         <button
           onClick={() => onExpand?.(id)}
-          className={`flex items-center gap-1 px-2 py-1 border text-xs font-medium transition-all duration-200 ${
-            status === 'running'
-              ? 'bg-blue-400/10 hover:bg-blue-400/20 border-blue-400/30 text-blue-400 hover:text-blue-300'
-              : status === 'done'
-              ? 'bg-emerald-400/10 hover:bg-emerald-400/20 border-emerald-400/30 text-emerald-400 hover:text-emerald-300'
-              : status === 'error'
-              ? 'bg-red-400/10 hover:bg-red-400/20 border-red-400/30 text-red-400 hover:text-red-300'
-              : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white/70 hover:text-white/90'
-          }`} style={{borderRadius: '15px'}}
+          className="flex items-center justify-center px-2 py-2 hover:bg-gray-500 text-xs font-medium text-white transition-all duration-200"
+          style={{borderRadius: '12px', backgroundColor: 'transparent', border: 'none'}}
         >
-          <Expand className="w-3 h-3" />
-          Details
+          <Expand className="w-2 h-2" />
         </button>
 
         {status === 'done' && (
-          <button className="flex items-center gap-1 px-2 py-1 bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-400/30 hover:border-emerald-400/40 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-all duration-200" style={{borderRadius: '15px'}}>
-            <Copy className="w-3 h-3" />
-            Copy
+          <button className="flex items-center justify-center px-2 py-2 hover:bg-gray-500 text-xs font-medium text-white transition-all duration-200" style={{borderRadius: '12px', backgroundColor: 'transparent', border: 'none'}}>
+            <Copy className="w-2 h-2" />
           </button>
         )}
 
         {status === 'running' && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-blue-400/10" style={{borderRadius: '15px'}}>
-            <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
-            <span className="text-xs text-blue-400 font-medium">Active</span>
+          <div className="flex items-center gap-1.5 px-3 py-2" style={{borderRadius: '12px', backgroundColor: 'transparent', border: 'none'}}>
+            <Zap className="w-2 h-2 text-white animate-pulse" />
+            <span className="text-xs text-white font-medium">Active</span>
           </div>
         )}
         </div>

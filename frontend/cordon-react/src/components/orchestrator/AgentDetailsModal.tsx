@@ -115,11 +115,12 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
 
       {/* Modal */}
       <div className="agent-details-modal-container">
-        <div className="bg-gray-700/95 backdrop-blur-sm border border-gray-600 rounded-2xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col"> it 
+        <div className="agent-modal-gradient-border shadow-2xl w-full max-w-2xl h-[600px]">
+          <div className="flex flex-col overflow-hidden"> 
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-600">
+          <div className="flex items-center justify-between p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-cyan-500/20 border border-cyan-400/30 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+              <div className="w-12 h-12 bg-cyan-500/20 border-2 border-cyan-400/30 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 p-2">
                 <span className="text-cyan-400 text-lg font-medium">{resolvedAgent.name.charAt(0)}</span>
               </div>
               <div>
@@ -139,10 +140,10 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/50 rounded-lg text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-all shadow-lg shadow-cyan-500/20"
+                className="flex items-center justify-center px-2 py-2 hover:bg-gray-500 text-white transition-all duration-200 rounded-lg"
+                style={{borderRadius: '12px', backgroundColor: 'transparent', border: 'none'}}
               >
-                {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
               </button>
               <button
                 onClick={onClose}
@@ -154,10 +155,10 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-600">
+          <div className="flex">
             <button
               onClick={() => handleTabChange('transcript')}
-              className={`px-6 py-3 text-sm font-medium transition-colors relative ${
+              className={`px-6 py-3 text-sm font-medium transition-colors relative bg-gray-600 ${
                 activeTab === 'transcript'
                   ? 'text-cyan-400'
                   : 'text-white/60 hover:text-cyan-400/80'
@@ -170,7 +171,7 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
             </button>
             <button
               onClick={() => handleTabChange('meta')}
-              className={`px-6 py-3 text-sm font-medium transition-colors relative ${
+              className={`px-6 py-3 text-sm font-medium transition-colors relative bg-gray-600 ${
                 activeTab === 'meta'
                   ? 'text-cyan-400'
                   : 'text-white/60 hover:text-cyan-400/80'
@@ -189,10 +190,10 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
               <div
                 ref={transcriptRef}
                 className="h-full overflow-y-auto p-6 agent-details-modal"
-                style={{ maxHeight: 'calc(85vh - 140px)' }}
+                style={{ height: '460px' }}
               >
                 {resolvedAgent.fullTranscript ? (
-                  <div className="bg-black border border-gray-600 rounded-lg p-4">
+                  <div className="p-4">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -267,10 +268,10 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
               <div 
                 ref={metaRef}
                 className="h-full overflow-y-auto p-6 agent-details-modal"
-                style={{ maxHeight: 'calc(85vh - 140px)' }}
+                style={{ height: '460px' }}
               >
                 <div className="space-y-4">
-                  <div className="bg-black border border-gray-600 rounded-lg p-4">
+                  <div className="p-4">
                     <h3 className="text-sm font-medium text-white mb-3">Agent Information</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -298,6 +299,7 @@ const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ isOpen, onClose, 
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

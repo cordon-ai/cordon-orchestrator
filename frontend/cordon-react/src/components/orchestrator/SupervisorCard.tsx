@@ -128,8 +128,8 @@ const SupervisorCard: React.FC<SupervisorCardProps> = ({ data }) => {
         <div 
           className="p-3 bg-white/5 rounded-lg overflow-y-auto text-center"
           style={{ 
-            height: `${Math.max(60, Math.min(200, prompt ? prompt.length * 0.8 : 60))}px`,
-            minHeight: '60px'
+            height: `${Math.max(84, Math.min(300, prompt ? prompt.length * 0.8 + 24 : 84))}px`,
+            minHeight: '84px'
           }}
         >
           <div className="text-sm text-white/100 mb-1 font-medium">Request:</div>

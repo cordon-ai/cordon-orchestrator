@@ -10,7 +10,6 @@ import Sidebar from './components/ui/Sidebar';
 import OrchestratorCanvas from './components/orchestrator/OrchestratorCanvas';
 import MarketplacePage from './components/marketplace/MarketplacePage';
 import AgentsPage from './components/agents/AgentsPage';
-import TaskVisualization from './components/chat/TaskVisualization';
 import ErrorBoundary from './components/ErrorBoundary';
 import { suppressResizeObserverErrors } from './utils/errorSuppression';
 import './App.css';
@@ -69,8 +68,6 @@ const App: React.FC = () => {
     chatState,
     sendMessage,
     stopStreaming,
-    showTaskVisualization,
-    setShowTaskVisualization,
     currentTasks,
     currentTaskId
   } = useChat(sessionId, availableAgents);
@@ -157,14 +154,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Task Visualization Popup */}
-      <TaskVisualization
-        isOpen={showTaskVisualization}
-        onClose={() => setShowTaskVisualization(false)}
-        originalPrompt={messages.filter(m => m.role === 'user').pop()?.content || 'Processing request...'}
-        tasks={currentTasks}
-        currentTaskId={currentTaskId}
-      />
     </div>
   );
 };

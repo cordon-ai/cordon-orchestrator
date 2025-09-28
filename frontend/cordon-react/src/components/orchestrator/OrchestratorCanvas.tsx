@@ -240,15 +240,10 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     const newAgentNodes = new Map<string, Node>();
     const newActiveEdges = new Set<string>();
     
-    // Sort tasks by priority first, then by status, but maintain stable positioning
+    // Sort tasks by priority (ascending) so first-executed is leftmost, last-executed is rightmost
     const sortedTasks = [...currentTasks].sort((a, b) => {
-      // First sort by priority (higher priority first)
-      if (a.priority !== b.priority) {
-        return (b.priority || 0) - (a.priority || 0);
-      }
-      // Then sort by status: pending -> running -> completed -> failed
-      const statusOrder = { 'pending': 0, 'running': 1, 'completed': 2, 'failed': 3 };
-      return statusOrder[a.status] - statusOrder[b.status];
+      // Sort by priority (lower priority number = executed first = leftmost)
+      return (a.priority || 0) - (b.priority || 0);
     });
     
     // Create a stable position map based on task ID to prevent cards from moving
@@ -582,6 +577,23 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
             showFitView={true}
             showInteractive={true}
             position="top-right"
+          />
+          <MiniMap
+            nodeColor={(node) => {
+              if (node.type === 'supervisor') return '#0891b2';
+              if (node.type === 'agent') return '#3b82f6';
+              return '#6b7280';
+            }}
+            nodeStrokeWidth={3}
+            nodeBorderRadius={8}
+            maskColor="rgba(0, 0, 0, 0.1)"
+            position="top-right"
+            style={{
+              backgroundColor: 'rgba(17, 24, 39, 0.8)',
+              border: '1px solid rgba(75, 85, 99, 0.3)',
+              borderRadius: '0.5rem',
+              marginTop: '60px', // Add margin to avoid overlap with controls
+            }}
           />
           <Background
             variant={BackgroundVariant.Dots}
