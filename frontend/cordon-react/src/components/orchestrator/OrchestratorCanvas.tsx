@@ -55,6 +55,7 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
   const [agentSpawnQueue, setAgentSpawnQueue] = useState<Set<string>>(new Set());
   const [dynamicAgentNodes, setDynamicAgentNodes] = useState<Map<string, Node>>(new Map());
   const [activeTaskEdges, setActiveTaskEdges] = useState<Set<string>>(new Set());
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 0.8 });
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const reactFlowRef = useRef<ReactFlowInstance>(null);
 
@@ -246,7 +247,7 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
       return (a.priority || 0) - (b.priority || 0);
     });
     
-    // Create a stable position map based on task ID to prevent cards from moving
+    // Create a stable position map based on task order to prevent cards from moving
     const taskPositionMap = new Map<string, number>();
     sortedTasks.forEach((task, index) => {
       taskPositionMap.set(task.id, index);
@@ -304,15 +305,46 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
         }
       };
 
-      // Create the node with stable positioning
+      // Calculate symmetrical positioning for better layout
+      const totalNodes = currentTasks.length;
+      const nodeWidth = 360; // Agent card width
+      const nodeHeight = 300; // Agent card height
+      const horizontalSpacing = 500; // Increased spacing between nodes
+      const verticalSpacing = 350; // Vertical spacing between rows
+      const supervisorDistance = 350; // Closer distance from supervisor
+      
+      // For symmetrical layout, calculate positions based on total nodes
+      let x, y;
+      
+      if (totalNodes === 1) {
+        // Single node: center it directly below supervisor
+        x = 200; // Supervisor x position
+        y = 200 + supervisorDistance;
+      } else if (totalNodes === 2) {
+        // Two nodes: place them symmetrically around supervisor
+        const offset = horizontalSpacing / 2;
+        x = 200 + (stableIndex === 0 ? -offset : offset);
+        y = 200 + supervisorDistance;
+      } else {
+        // Multiple nodes: use grid layout with proper centering
+        const nodesPerRow = Math.ceil(Math.sqrt(totalNodes));
+        const row = Math.floor(stableIndex / nodesPerRow);
+        const col = stableIndex % nodesPerRow;
+        
+        // Calculate total width of this row
+        const nodesInThisRow = Math.min(nodesPerRow, totalNodes - row * nodesPerRow);
+        const totalRowWidth = (nodesInThisRow - 1) * horizontalSpacing;
+        
+        // Center this row around supervisor
+        const startX = 200 - (totalRowWidth / 2);
+        x = startX + col * horizontalSpacing;
+        y = 200 + supervisorDistance + row * verticalSpacing;
+      }
+      
       const node: Node = {
         id: agentId,
         type: 'agent',
-        position: {
-          // Use stable index to prevent cards from moving
-          x: 100 + stableIndex * 400, // 400px spacing between nodes
-          y: 500 // Same Y level for all agent nodes - increased distance from supervisor
-        },
+        position: { x, y },
         data: {
           ...agentData,
           onExpand: handleAgentExpand,
@@ -427,15 +459,12 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
     // Use dynamic agent nodes instead of legacy agents
     const dynamicNodes = Array.from(dynamicAgentNodes.values());
     
-    // Always create supervisor node, even when there are no tasks
+    // Always create supervisor node with stable positioning
     const supervisorNode: Node = {
       id: 'supervisor',
       type: 'supervisor',
       position: { 
-        x: dynamicNodes.length > 0 ? 
-          // Center supervisor above the agent nodes using stable positioning
-          (100 + (dynamicNodes.length - 1) * 400) / 2 : 
-          400, // Default position if no agents
+        x: 200, // Align with agent nodes
         y: 100 
       },
       data: {
@@ -542,6 +571,7 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           nodeTypes={nodeTypes}
           fitView={false}
           fitViewOptions={{ padding: 0.6 }}
+          onlyRenderVisibleElements={false}
           className="orchestrator-canvas"
           proOptions={{ hideAttribution: true }}
           nodesDraggable={true}
@@ -554,10 +584,13 @@ const OrchestratorCanvas: React.FC<OrchestratorCanvasProps> = ({
           preventScrolling={false}
           minZoom={0.1}
           maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+          defaultViewport={viewport}
           onInit={(instance) => {
             reactFlowRef.current = instance;
             console.log('React Flow initialized:', instance);
+          }}
+          onMove={(event, viewport) => {
+            setViewport(viewport);
           }}
           onWheel={(event) => {
             // Manual zoom handling
