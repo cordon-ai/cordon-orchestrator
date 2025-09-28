@@ -19,7 +19,7 @@ npm start
 ```
 
 Download local model (ollama)
-``
+```
 ollama serve
 ollama pull llama3.1:8b
 ```
