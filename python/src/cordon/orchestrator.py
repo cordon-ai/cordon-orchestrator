@@ -77,7 +77,11 @@ class AgentTeam:
     async def split_input_into_tasks(self, user_input: str, progress_callback=None) -> List[Task]:
         """Split user input into individual tasks using supervisor agent with NLP."""
         if progress_callback:
-            progress_callback({"type": "task_splitting", "message": "🧠 Supervisor analyzing request and breaking into tasks..."})
+            progress_callback({
+                "type": "thinking_phase", 
+                "thinkingPhase": "analyzing",
+                "message": "🧠 Analyzing request and determining task structure..."
+            })
 
         if not self.supervisor:
             # Fallback to simple splitting if no supervisor
@@ -109,7 +113,12 @@ class AgentTeam:
             tasks = self._parse_supervisor_response(response, user_input)
 
             if progress_callback:
-                progress_callback({"type": "tasks_created", "tasks": [{"id": t.id, "description": t.description, "assigned_agent": t.assigned_agent, "status": t.status.value} for t in tasks]})
+                progress_callback({
+                    "type": "thinking_phase", 
+                    "thinkingPhase": "task_creation",
+                    "tasks": [{"id": t.id, "description": t.description, "assigned_agent": t.assigned_agent, "status": t.status.value} for t in tasks],
+                    "message": f"📋 Created {len(tasks)} tasks for execution"
+                })
 
             return tasks
 
@@ -228,6 +237,13 @@ Only return the JSON array, no other text."""
     
     async def assign_tasks_to_agents(self, tasks: List[Task], progress_callback=None) -> None:
         """Assign tasks to appropriate agents (now handled by supervisor in task splitting)."""
+        if progress_callback:
+            progress_callback({
+                "type": "thinking_phase", 
+                "thinkingPhase": "task_assignment",
+                "message": "📋 Assigning tasks to available agents..."
+            })
+        
         for task in tasks:
             if task.assigned_agent:
                 # Agent already assigned by supervisor
@@ -290,20 +306,23 @@ Only return the JSON array, no other text."""
         return None
     
     async def execute_tasks_sequential(self, tasks: List[Task], progress_callback=None) -> List[TaskResult]:
-        """Execute tasks sequentially in order."""
+        """Execute tasks sequentially in order with context passing."""
         results = []
 
         # Add tasks to the task dictionary
         for task in tasks:
             self.tasks[task.id] = task
 
-        # Execute tasks one by one in order
+        # Execute tasks one by one in order, passing context from previous tasks
         for i, task in enumerate(tasks):
             print(f"🔄 Executing task: {task.description[:50]}...")
             if progress_callback:
                 progress_callback({"type": "task_started", "task_id": task.id, "progress": f"{i+1}/{len(tasks)}", "message": f"🔄 Starting: {task.description[:50]}..."})
 
-            result = await self._execute_single_task(task, progress_callback)
+            # Build context from previous completed tasks
+            previous_context = self._build_context_from_previous_tasks(results)
+            
+            result = await self._execute_single_task(task, progress_callback, previous_context)
             results.append(result)
 
             if progress_callback:
@@ -319,7 +338,37 @@ Only return the JSON array, no other text."""
         return results
     
     
-    async def _execute_single_task(self, task: Task, progress_callback=None) -> TaskResult:
+    def _build_context_from_previous_tasks(self, completed_results: List[TaskResult]) -> str:
+        """Build context string from previous completed tasks."""
+        if not completed_results:
+            return ""
+        
+        context_parts = []
+        for result in completed_results:
+            if result.success and result.output:
+                # Get the agent name from the task
+                task = self.tasks.get(result.task_id)
+                agent_name = task.assigned_agent if task else "Previous Agent"
+                
+                context_parts.append(f"**{agent_name} Output:**\n{result.output}\n")
+        
+        if context_parts:
+            return "\n---\n".join(context_parts)
+        return ""
+
+    def _build_enhanced_task_description(self, task_description: str, previous_context: str) -> str:
+        """Build enhanced task description with previous context."""
+        if not previous_context:
+            return task_description
+        
+        return f"""**Task:** {task_description}
+
+**Context from Previous Tasks:**
+{previous_context}
+
+**Instructions:** Use the context from previous tasks to complete this task. The previous agent outputs contain relevant information that should inform your response."""
+
+    async def _execute_single_task(self, task: Task, progress_callback=None, previous_context: str = "") -> TaskResult:
         """Execute a single task and return the result."""
         task.status = TaskStatus.RUNNING
         task.started_at = asyncio.get_event_loop().time()
@@ -356,9 +405,13 @@ Only return the JSON array, no other text."""
                 # Handle regular agent tasks
                 if progress_callback:
                     progress_callback({"type": "agent_processing", "task_id": task.id, "agent": agent.name, "message": f"🤖 {agent.name} processing task..."})
+                
+                # Build enhanced task description with previous context
+                enhanced_description = self._build_enhanced_task_description(task.description, previous_context)
+                
                 chat_history = []
                 response = await agent.process_request(
-                    task.description,
+                    enhanced_description,
                     "task_user",
                     f"task_{task.id}",
                     chat_history
@@ -638,6 +691,12 @@ Only return the JSON array, no other text."""
 
             # Step 3: Execute tasks sequentially
             print(f"⚡ Executing {len(tasks)} tasks sequentially...")
+            if progress_callback:
+                progress_callback({
+                    "type": "thinking_phase", 
+                    "thinkingPhase": "execution",
+                    "message": "🔄 Orchestrating task execution..."
+                })
             task_results = await self.execute_tasks_sequential(tasks, progress_callback)
             
             # Step 4: Coordinate responses and return final result

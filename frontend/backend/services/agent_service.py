@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'python', 'src'))
 
 from cordon.agents.generic_llm_agent import GenericLLMAgent, GenericLLMAgentOptions
+from cordon.agents.researcher_agent import ResearcherAgent, ResearcherAgentOptions
 from cordon.orchestrator import AgentTeam
 from cordon.types import AgentTeamConfig
 from cordon.agents.openai_agent import OpenAIAgent, OpenAIAgentOptions
@@ -39,18 +40,18 @@ class AgentService:
         if not self.orchestrator:
             return
 
-        # Researcher agent
-        researcher = GenericLLMAgent(GenericLLMAgentOptions(
+        # Researcher agent with web scraping capabilities
+        researcher = ResearcherAgent(ResearcherAgentOptions(
             name="Researcher",
-            description="Answers research questions and provides analysis",
+            description="Answers research questions and provides analysis with web scraping capabilities",
             generate=generate_llm_response,
         ))
         self.orchestrator.add_agent(researcher)
 
-        # Coder agent
+        # Coder agent with web scraping capabilities
         coder = GenericLLMAgent(GenericLLMAgentOptions(
             name="Coder",
-            description="Writes code like a seasoned developer",
+            description="Writes code like a seasoned developer with web scraping capabilities",
             generate=generate_llm_response,
         ))
         self.orchestrator.add_agent(coder)
@@ -78,8 +79,8 @@ CRITICAL: You must respond with ONLY valid JSON. No other text, explanations, or
 When given a user request, split it into individual tasks and assign each task to the most appropriate agent.
 
 Available agents:
-- Researcher: Answers research questions and provides analysis
-- Coder: Writes code like a seasoned developer  
+- Researcher: Answers research questions and provides analysis with web scraping capabilities
+- Coder: Writes code like a seasoned developer with web scraping capabilities
 - CommandExecutor: Executes terminal commands and provides command-line assistance
 
 For simple requests, return a single task. For complex requests, split into multiple tasks.
@@ -95,6 +96,8 @@ RESPOND WITH ONLY THIS EXACT FORMAT (no other text):
 
 Examples:
 - "Research AI trends" → [{"description": "Research AI trends", "assigned_agent": "Researcher", "priority": 0}]
+- "Scrape the latest news from a website" → [{"description": "Scrape the latest news from a website", "assigned_agent": "Researcher", "priority": 0}]
+- "Scrape Python documentation and create a web scraper" → [{"description": "Scrape Python documentation and create a web scraper", "assigned_agent": "Coder", "priority": 0}]
 - "Write a Python script and test it" → [{"description": "Write a Python script", "assigned_agent": "Coder", "priority": 0}, {"description": "Test the script", "assigned_agent": "CommandExecutor", "priority": 1}]
 
 REMEMBER: Only return the JSON array, nothing else. No explanations, no markdown, no additional text."""
@@ -105,8 +108,8 @@ REMEMBER: Only return the JSON array, nothing else. No explanations, no markdown
     def get_agent_capabilities(self, agent_name: str) -> List[str]:
         """Get capabilities for a given agent"""
         capabilities_map = {
-            "Researcher": ["Research", "Analysis", "Data gathering", "Fact checking"],
-            "Coder": ["Programming", "Code review", "Debugging", "Software development"],
+            "Researcher": ["Research", "Analysis", "Data gathering", "Fact checking", "Web scraping", "Online research"],
+            "Coder": ["Programming", "Code review", "Debugging", "Software development", "Web scraping", "API integration", "Documentation lookup"],
             "CommandExecutor": ["Terminal commands", "System administration", "File operations", "Process management"],
             "Supervisor": ["Classification", "Routing", "Coordination", "Management"],
             "Writer": ["Content creation", "Editing", "Proofreading", "Creative writing"],
