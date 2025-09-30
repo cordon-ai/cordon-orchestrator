@@ -6,7 +6,7 @@ This script uses the modular backend structure for better maintainability
 
 import argparse
 import uvicorn
-from backend.app import app, initialize_services
+from api_server.app import app, initialize_services
 
 
 def main():
