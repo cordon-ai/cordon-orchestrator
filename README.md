@@ -1,6 +1,6 @@
 # cordon-orchestrator
 
-Install all requirements: 
+Install all requirements (Under development): 
 ``` pip install -e . ```
 
 Running the frontend: 
@@ -15,6 +15,7 @@ python start_integrated.py
 start react server 
 ```
 cd frontend/cordon-react
+npm install
 npm start
 ```
 
