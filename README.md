@@ -4,7 +4,7 @@ A multi-agent orchestrator with web frontend and React UI.
 
 ## Installation
 
-Install all requirements including frontend API server dependencies:
+Install all requirements including frontend API server dependencies (under development):
 ```bash
 pip install -e .[frontend,dev]
 ```
@@ -31,18 +31,4 @@ ollama serve
 ollama pull llama3.1:8b
 ```
 
-## Architecture
 
-- **Backend**: Python orchestrator with FastAPI frontend server
-- **Frontend**: React application with modern UI
-- **Agents**: Multiple AI agents (Researcher, Coder, CommandExecutor, etc.)
-- **LLM Integration**: Supports OpenAI, Anthropic, and local Ollama models
-
-## Features
-
-- Multi-agent orchestration system
-- Real-time WebSocket communication
-- Web scraping capabilities
-- Agent marketplace with custom agents
-- Streaming responses
-- Cross-platform support
